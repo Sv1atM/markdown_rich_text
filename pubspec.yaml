@@ -1,0 +1,19 @@
+name: markdown_rich_text
+description: "Markdown parser into RichText widget."
+version: 0.0.1
+homepage: none
+
+environment:
+  sdk: ^3.6.2
+  flutter: ">=1.17.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  html: ^0.15.6
+  markdown: ^7.3.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
