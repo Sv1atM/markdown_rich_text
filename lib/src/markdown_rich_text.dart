@@ -66,6 +66,7 @@ class MarkdownRichText extends StatefulWidget {
     this.textAlign,
     this.textDirection,
     this.textScaler,
+    this.maxLines,
     this.semanticsLabel,
     this.textWidthBasis,
     this.textHeightBehavior,
@@ -99,6 +100,9 @@ class MarkdownRichText extends StatefulWidget {
 
   /// The [TextScaler] to use for scaling text.
   final TextScaler? textScaler;
+
+  /// The maximum number of lines to display before truncating.
+  final int? maxLines;
 
   /// An optional semantic label for accessibility.
   final String? semanticsLabel;
@@ -182,6 +186,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
     return _buildRichTextWidget(
       textScaler: widget.textScaler ?? MediaQuery.textScalerOf(context),
       style: _styleSheet.p,
+      maxLines: widget.maxLines,
       children: [
         ..._buildRichTextTree(
           _parseMarkdown(widget.textSpan.text!),
@@ -200,6 +205,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
     TextStyle? style,
     TextAlign? textAlign,
     TextScaler? textScaler,
+    int? maxLines,
     List<InlineSpan>? children,
   }) {
     return Text.rich(
@@ -209,6 +215,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
       textAlign: textAlign ?? widget.textAlign,
       textDirection: widget.textDirection,
       textScaler: textScaler ?? TextScaler.noScaling,
+      maxLines: maxLines,
       semanticsLabel: widget.semanticsLabel,
       textWidthBasis: widget.textWidthBasis,
       textHeightBehavior: widget.textHeightBehavior,
