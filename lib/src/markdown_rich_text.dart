@@ -49,6 +49,12 @@ class MarkdownTextSpan extends TextSpan {
   });
 }
 
+/// A [TextSpan] that acts as a spacer in the Markdown rendering process.
+class SpacerTextSpan extends TextSpan {
+  /// Creates a [SpacerTextSpan].
+  const SpacerTextSpan();
+}
+
 /// A widget that renders a [MarkdownTextSpan] as rich text with optional styling and interaction.
 ///
 /// This widget allows for custom Markdown styling, theming, and tap handling.
@@ -74,8 +80,8 @@ class MarkdownRichText extends StatefulWidget {
     super.key,
   });
 
-  /// The root [MarkdownTextSpan] to render as rich text.
-  final MarkdownTextSpan textSpan;
+  /// The text to display as a [InlineSpan].
+  final InlineSpan textSpan;
 
   /// The Markdown parser settings.
   final MarkdownSettings settings;
@@ -187,16 +193,10 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
       textScaler: widget.textScaler ?? MediaQuery.textScalerOf(context),
       style: _styleSheet.p,
       maxLines: widget.maxLines,
-      children: [
-        ..._buildRichTextTree(
-          _parseMarkdown(widget.textSpan.text!),
-          blockSpacer: blockSpacer,
-        ),
-        ...?_mapChildren(
-          widget.textSpan.children,
-          blockSpacer: blockSpacer,
-        ),
-      ],
+      children: _mapChildren(
+        [widget.textSpan],
+        blockSpacer: blockSpacer,
+      ),
     );
   }
 
@@ -243,7 +243,10 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
               ),
             ],
           )
-        else if (child is TextSpan)
+        else if (child is SpacerTextSpan) ...[
+          const TextSpan(text: '\n'),
+          blockSpacer,
+        ] else if (child is TextSpan)
           TextSpan(
             text: child.text,
             style: child.style,
