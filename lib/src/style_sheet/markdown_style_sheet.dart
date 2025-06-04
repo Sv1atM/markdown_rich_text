@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 part 'markdown_blockquote_style.dart';
 part 'markdown_code_block_style.dart';
 part 'markdown_horizontal_rule_style.dart';
+part 'markdown_image_style.dart';
 part 'markdown_list_style.dart';
 
 /// A class that defines the styles used for rendering Markdown elements.
@@ -28,6 +29,7 @@ class MarkdownStyleSheet {
     this.list = const MarkdownListStyle(),
     this.blockquote = const MarkdownBlockquoteStyle(),
     this.codeblock = const MarkdownCodeBlockStyle(),
+    this.image = const MarkdownImageStyle(),
     this.horizontalRule = const MarkdownHorizontalRuleStyle(),
     this.blockSpacing = 8,
   }) : textStyles = Map.unmodifiable({
@@ -44,6 +46,7 @@ class MarkdownStyleSheet {
           'h5': h5,
           'h6': h6,
           'i': em,
+          'img': image.textStyle ?? p,
           'li': list.textStyle ?? p,
           'p': p,
           'pre': codeblock.textStyle ?? code,
@@ -99,6 +102,9 @@ class MarkdownStyleSheet {
 
   /// The style for code blocks.
   final MarkdownCodeBlockStyle codeblock;
+
+  /// The style for images.
+  final MarkdownImageStyle image;
 
   /// The style for horizontal rules.
   final MarkdownHorizontalRuleStyle horizontalRule;
@@ -237,6 +243,7 @@ class MarkdownStyleSheet {
       list: list.merge(other.list),
       blockquote: blockquote.merge(other.blockquote),
       codeblock: codeblock.merge(other.codeblock),
+      image: image.merge(other.image),
       horizontalRule: horizontalRule.merge(other.horizontalRule),
       blockSpacing: other.blockSpacing,
     );
@@ -262,6 +269,7 @@ class MarkdownStyleSheet {
         mapEquals(other.stylesExtension, stylesExtension) &&
         other.blockquote == blockquote &&
         other.codeblock == codeblock &&
+        other.image == image &&
         other.horizontalRule == horizontalRule &&
         other.blockSpacing == blockSpacing;
   }
@@ -284,6 +292,7 @@ class MarkdownStyleSheet {
         stylesExtension,
         blockquote,
         codeblock,
+        image,
         horizontalRule,
         blockSpacing,
       ]);

@@ -1,4 +1,4 @@
-import 'dart:io' show Platform;
+import 'dart:io' show File, Platform;
 
 import 'package:flutter/cupertino.dart' show CupertinoTheme;
 import 'package:flutter/gestures.dart' show TapGestureRecognizer;
@@ -68,6 +68,7 @@ class MarkdownRichText extends StatefulWidget {
     this.styleSheet,
     this.styleSheetTheme = MarkdownStyleSheetBaseTheme.material,
     this.onLinkTap,
+    this.imageDirectory,
     this.strutStyle,
     this.textAlign,
     this.textDirection,
@@ -94,6 +95,9 @@ class MarkdownRichText extends StatefulWidget {
 
   /// Callback invoked when a link is tapped, with the link's URL string.
   final void Function(String)? onLinkTap;
+
+  /// The base directory holding images referenced by Img tags with local or network file paths.
+  final String? imageDirectory;
 
   /// Optional [StrutStyle] for text layout.
   final StrutStyle? strutStyle;
@@ -223,6 +227,66 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
     );
   }
 
+  Widget _buildImageWidget(MarkdownImageConfig config) {
+    switch (config.uri.scheme) {
+      case 'https':
+      case 'http':
+        return Image.network(
+          config.uri.toString(),
+          width: config.width,
+          height: config.height,
+          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+        );
+
+      case 'resource':
+        return Image.asset(
+          config.uri.path,
+          width: config.width,
+          height: config.height,
+          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+        );
+
+      case 'data':
+        final data = config.uri.data!;
+        if (data.mimeType.startsWith('image/')) {
+          return Image.memory(
+            data.contentAsBytes(),
+            width: config.width,
+            height: config.height,
+            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+          );
+        }
+        if (data.mimeType.startsWith('text/')) {
+          return Text(data.contentAsString());
+        }
+        return const SizedBox.shrink();
+
+      default:
+        final fileUri = Uri.parse(
+          [widget.imageDirectory ?? '', config.uri].join(),
+        );
+        if (fileUri.scheme == 'https' || fileUri.scheme == 'http') {
+          return Image.network(
+            fileUri.toString(),
+            width: config.width,
+            height: config.height,
+            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+          );
+        } else {
+          try {
+            return Image.file(
+              File.fromUri(fileUri),
+              width: config.width,
+              height: config.height,
+              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+            );
+          } catch (_) {
+            return const SizedBox.shrink();
+          }
+        }
+    }
+  }
+
   List<InlineSpan>? _mapChildren(
     List<InlineSpan>? children, {
     required InlineSpan blockSpacer,
@@ -284,7 +348,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
             yield* _buildListSpans(
               node.nodes,
               blockSpacer: blockSpacer,
-              textStyle: _styleSheet.textStyles['li'] ?? const TextStyle(),
+              textStyle: _styleSheet.textStyles['li'],
               type: (node.localName == 'ul')
                   ? MarkdownListType.unordered
                   : MarkdownListType.ordered,
@@ -293,22 +357,32 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
             );
 
           case 'blockquote':
-            final textStyle = _styleSheet.textStyles[node.localName];
             yield _buildBlockquoteSpan(
               node.nodes,
               blockSpacer: blockSpacer,
-              textStyle: textStyle ?? const TextStyle(),
+              textStyle: _styleSheet.textStyles[node.localName],
             );
 
           case 'pre':
-            final textStyle = _styleSheet.textStyles[node.localName];
             yield _buildCodeBlockSpan(
               node.text,
-              textStyle: textStyle ?? const TextStyle(),
+              textStyle: _styleSheet.textStyles[node.localName],
             );
 
           case 'hr':
             yield _buildHorizontalRuleSpan();
+
+          case 'img':
+            yield _buildImageSpan(
+              config: MarkdownImageConfig(
+                uri: Uri.parse(node.attributes['src']!),
+                title: node.attributes['title'],
+                alt: node.attributes['alt'],
+                width: double.tryParse(node.attributes['width'] ?? ''),
+                height: double.tryParse(node.attributes['height'] ?? ''),
+              ),
+              textStyle: _styleSheet.textStyles[node.localName],
+            );
 
           default:
             final textStyle = _styleSheet.textStyles[node.localName];
@@ -341,7 +415,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
     List<html.Node> nodes, {
     required InlineSpan blockSpacer,
     required MarkdownListType type,
-    required TextStyle textStyle,
+    required TextStyle? textStyle,
     required int level,
     int start = 1,
   }) sync* {
@@ -350,7 +424,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
         .whereType<html.Element>()
         .where((element) => element.localName == 'li')
         .toList();
-    final bulletStyle = textStyle.merge(
+    final bulletStyle = (textStyle ?? const TextStyle()).merge(
       switch (type) {
         MarkdownListType.unordered => listStyle.bulletStyle,
         MarkdownListType.ordered => listStyle.numberStyle,
@@ -430,7 +504,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
   InlineSpan _buildBlockquoteSpan(
     List<html.Node> nodes, {
     required InlineSpan blockSpacer,
-    required TextStyle textStyle,
+    required TextStyle? textStyle,
   }) {
     final blockStyle = _styleSheet.blockquote;
     return WidgetSpan(
@@ -460,7 +534,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
 
   InlineSpan _buildCodeBlockSpan(
     String text, {
-    required TextStyle textStyle,
+    required TextStyle? textStyle,
   }) {
     final blockStyle = _styleSheet.codeblock;
     return WidgetSpan(
@@ -489,6 +563,21 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
         color: lineStyle.color,
         thickness: lineStyle.thickness,
         height: lineStyle.thickness,
+      ),
+    );
+  }
+
+  InlineSpan _buildImageSpan({
+    required MarkdownImageConfig config,
+    required TextStyle? textStyle,
+  }) {
+    final imageStyle = _styleSheet.image;
+    return WidgetSpan(
+      alignment: imageStyle.alignment,
+      baseline: imageStyle.baseline,
+      child: DefaultTextStyle.merge(
+        style: textStyle,
+        child: imageStyle.builder?.call(config) ?? _buildImageWidget(config),
       ),
     );
   }
