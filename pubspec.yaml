@@ -1,17 +1,19 @@
 name: markdown_rich_text
-description: "Markdown parser into RichText widget."
-version: 0.0.1
-homepage: https://github.com/Sv1atM/markdown_rich_text
+description: "Extended RichText widget with Markdown and inline HTML support."
+repository: https://github.com/Sv1atM/markdown_rich_text
+issue_tracker: https://github.com/Sv1atM/markdown_rich_text/issues
+version: 0.1.0
 
 environment:
-  sdk: ^3.6.2
-  flutter: ">=1.17.0"
+  sdk: ^3.4.0
+  flutter: ">=3.27.1"
 
 dependencies:
   flutter:
     sdk: flutter
   html: ^0.15.6
   markdown: ^7.3.0
+  path: ^1.9.0
 
 dev_dependencies:
   flutter_test:

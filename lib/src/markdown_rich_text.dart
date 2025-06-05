@@ -1,12 +1,10 @@
-import 'dart:io' show File, Platform;
-
-import 'package:flutter/cupertino.dart' show CupertinoTheme;
 import 'package:flutter/gestures.dart' show TapGestureRecognizer;
 import 'package:flutter/material.dart';
 import 'package:html/dom.dart' as html;
 import 'package:html/parser.dart' show parseFragment;
 import 'package:markdown/markdown.dart' hide Text;
 
+import '_io.dart' if (dart.library.js_interop) '_web.dart';
 import 'markdown_settings.dart';
 import 'style_sheet/markdown_style_sheet.dart';
 
@@ -158,16 +156,10 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
   }
 
   void _createStyleSheet() {
-    final fallbackStyleSheet = switch (widget.styleSheetTheme) {
-      MarkdownStyleSheetBaseTheme.material =>
-        MarkdownStyleSheet.fromTheme(Theme.of(context)),
-      MarkdownStyleSheetBaseTheme.cupertino =>
-        MarkdownStyleSheet.fromCupertinoTheme(CupertinoTheme.of(context)),
-      MarkdownStyleSheetBaseTheme.platform =>
-        (Platform.isIOS || Platform.isMacOS)
-            ? MarkdownStyleSheet.fromCupertinoTheme(CupertinoTheme.of(context))
-            : MarkdownStyleSheet.fromTheme(Theme.of(context)),
-    };
+    final fallbackStyleSheet = getFallbackStyleSheet(
+      context: context,
+      baseTheme: widget.styleSheetTheme,
+    );
     _styleSheet = fallbackStyleSheet.merge(widget.styleSheet);
   }
 
@@ -232,66 +224,6 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
       textHeightBehavior: widget.textHeightBehavior,
       selectionColor: widget.selectionColor,
     );
-  }
-
-  Widget _buildImageWidget(MarkdownImageConfig config) {
-    switch (config.uri.scheme) {
-      case 'https':
-      case 'http':
-        return Image.network(
-          config.uri.toString(),
-          width: config.width,
-          height: config.height,
-          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-        );
-
-      case 'resource':
-        return Image.asset(
-          config.uri.path,
-          width: config.width,
-          height: config.height,
-          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-        );
-
-      case 'data':
-        final data = config.uri.data!;
-        if (data.mimeType.startsWith('image/')) {
-          return Image.memory(
-            data.contentAsBytes(),
-            width: config.width,
-            height: config.height,
-            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-          );
-        }
-        if (data.mimeType.startsWith('text/')) {
-          return Text(data.contentAsString());
-        }
-        return const SizedBox.shrink();
-
-      default:
-        final fileUri = Uri.parse(
-          [widget.imageDirectory ?? '', config.uri].join(),
-        );
-        if (fileUri.scheme == 'https' || fileUri.scheme == 'http') {
-          return Image.network(
-            fileUri.toString(),
-            width: config.width,
-            height: config.height,
-            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-          );
-        } else {
-          try {
-            return Image.file(
-              File.fromUri(fileUri),
-              width: config.width,
-              height: config.height,
-              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-            );
-          } catch (_) {
-            return const SizedBox.shrink();
-          }
-        }
-    }
   }
 
   List<InlineSpan>? _mapChildren(
@@ -584,7 +516,11 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
       baseline: imageStyle.baseline,
       child: DefaultTextStyle.merge(
         style: textStyle,
-        child: widget.imageBuilder?.call(config) ?? _buildImageWidget(config),
+        child: widget.imageBuilder?.call(config) ??
+            buildImageWidget(
+              config,
+              imageDirectory: widget.imageDirectory,
+            ),
       ),
     );
   }
