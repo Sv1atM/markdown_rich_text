@@ -1,7 +1,7 @@
 name: markdown_rich_text
 description: "Markdown parser into RichText widget."
 version: 0.0.1
-homepage: none
+homepage: https://github.com/Sv1atM/markdown_rich_text
 
 environment:
   sdk: ^3.6.2

@@ -68,6 +68,7 @@ class MarkdownRichText extends StatefulWidget {
     this.styleSheet,
     this.styleSheetTheme = MarkdownStyleSheetBaseTheme.material,
     this.onLinkTap,
+    this.imageBuilder,
     this.imageDirectory,
     this.strutStyle,
     this.textAlign,
@@ -95,6 +96,12 @@ class MarkdownRichText extends StatefulWidget {
 
   /// Callback invoked when a link is tapped, with the link's URL string.
   final void Function(String)? onLinkTap;
+
+  /// A custom builder for rendering the image widget.
+  ///
+  /// If provided, this function is used to build the image widget
+  /// using the given [MarkdownImageConfig].
+  final Widget Function(MarkdownImageConfig)? imageBuilder;
 
   /// The base directory holding images referenced by Img tags with local or network file paths.
   final String? imageDirectory;
@@ -577,7 +584,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
       baseline: imageStyle.baseline,
       child: DefaultTextStyle.merge(
         style: textStyle,
-        child: imageStyle.builder?.call(config) ?? _buildImageWidget(config),
+        child: widget.imageBuilder?.call(config) ?? _buildImageWidget(config),
       ),
     );
   }

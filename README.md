@@ -1,39 +1,46 @@
-<!--
-This README describes the package. If you publish this package to pub.dev,
-this README's contents appear on the landing page for your package.
+A Markdown RichText widget builder with inline HTML support. Inspired by the original [flutter_markdown](https://pub.dev/packages/flutter_markdown) package and was made as its alternative which has the same base styling.
 
-For information about how to write a good package README, see the guide for
-[writing package pages](https://dart.dev/tools/pub/writing-package-pages).
+This package doesn't support all features which the original package has. Also it doesn't have full HTML support.
+Which features are supported for now:
+- Text styles (`<b>`, `<strong>`, `<i>`, `<em>`, `<s>`, `<del>`, `<code>`)
+- Headings (`<h1>`...`<h6>`)
+- Links (`<a>`)
+- Lists (`<ul>`, `<ol>`, `<li>`)
+- Blockquotes (`<blockquote>`)
+- Code blocks (`<pre>`, `<code>`)
+- Horizontal rules (`<hr>`)
+- Images (`<img>`)
+- Breaks (`<br>`)
 
-For general information about developing packages, see the Dart guide for
-[creating packages](https://dart.dev/guides/libraries/create-packages)
-and the Flutter guide for
-[developing packages and plugins](https://flutter.dev/to/develop-packages).
--->
+You can simply extend supported HTML styles using a `MarkdownStyleSheet.stylesExtension` set.
+Also you can configure the Markdown [syntax extensions](https://pub.dev/packages/markdown#syntax-extensions) and [extension sets](https://pub.dev/packages/markdown#extension-sets) via `MarkdownRichText.settings`.
 
-TODO: Put a short description of the package here that helps potential users
-know whether this package might be useful for them.
+### How it works
 
-## Features
+The Markdown text is converted into HTML and then the HTML is mapped into InlineSpans of the RichText. That's how it supports both: the Markdown and HTML styling.
+It's built on top of the Dart [markdown](https://pub.dev/packages/markdown) and [html](https://pub.dev/packages/html) packages.
 
-TODO: List what your package can do. Maybe include images, gifs, or videos.
-
-## Getting started
-
-TODO: List prerequisites and provide or point to information on how to
-start using the package.
-
-## Usage
-
-TODO: Include short and useful examples for package users. Add longer examples
-to `/example` folder.
+### Usage
 
 ```dart
-const like = 'sample';
+import 'package:markdown_rich_text/markdown_rich_text.dart';
+
+void main() {
+  runApp(
+    MaterialApp(
+      home: Scaffold(
+        body: MarkdownRichText(
+          MarkdownTextSpan(
+            text: markdownString,
+            children: [
+              const SpacerTextSpan(), // This will add a space between the text spans
+              TextSpan(text: plainText), // This will add a plain text and won't be parsed
+            ],
+          ),
+          styleSheet: MarkdownStyleSheet(), // Optional, you can customize the styles
+        ),
+      ),
+    ),
+  );
+}
 ```
-
-## Additional information
-
-TODO: Tell users more about the package: where to find more information, how to
-contribute to the package, how to file issues, what response they can expect
-from the package authors, and more.
