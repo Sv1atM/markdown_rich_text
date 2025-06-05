@@ -1,3 +1,7 @@
+## 0.1.0
+
+* Added support for Web.
+
 ## 0.0.1
 
-* TODO: Describe initial release.
+* Initial release.
