@@ -71,6 +71,7 @@ class MarkdownRichText extends StatefulWidget {
     this.strutStyle,
     this.textAlign,
     this.textDirection,
+    this.overflow,
     this.textScaler,
     this.maxLines,
     this.semanticsLabel,
@@ -113,6 +114,9 @@ class MarkdownRichText extends StatefulWidget {
   /// The text direction to use for rendering.
   final TextDirection? textDirection;
 
+  /// The overflow strategy for text that exceeds the available space.
+  final TextOverflow? overflow;
+
   /// The [TextScaler] to use for scaling text.
   final TextScaler? textScaler;
 
@@ -140,10 +144,16 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
   late MarkdownStyleSheet _styleSheet;
 
   List<html.Node> _parseMarkdown(String text) {
-    final input = renderToHtml(
-      _document.parse(text),
-      enableTagfilter: widget.settings.enableTagfilter,
-    );
+    final leadingSpaces = RegExp(r'^ +').firstMatch(text)?.group(0)?.length;
+    final trailingSpaces = RegExp(r' +$').firstMatch(text)?.group(0)?.length;
+    final input = [
+      if (leadingSpaces != null) ' ' * leadingSpaces,
+      renderToHtml(
+        _document.parse(text),
+        enableTagfilter: widget.settings.enableTagfilter,
+      ),
+      if (trailingSpaces != null) ' ' * trailingSpaces,
+    ].join();
     return parseFragment(input).nodes;
   }
 
@@ -195,6 +205,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
     return _buildRichTextWidget(
       textScaler: widget.textScaler ?? MediaQuery.textScalerOf(context),
       style: _styleSheet.p,
+      overflow: widget.overflow,
       maxLines: widget.maxLines,
       children: _mapChildren(
         [widget.textSpan],
@@ -207,6 +218,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
     String? text,
     TextStyle? style,
     TextAlign? textAlign,
+    TextOverflow? overflow,
     TextScaler? textScaler,
     int? maxLines,
     List<InlineSpan>? children,
@@ -217,12 +229,66 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
       strutStyle: widget.strutStyle,
       textAlign: textAlign ?? widget.textAlign,
       textDirection: widget.textDirection,
+      overflow: overflow,
       textScaler: textScaler ?? TextScaler.noScaling,
       maxLines: maxLines,
       semanticsLabel: widget.semanticsLabel,
       textWidthBasis: widget.textWidthBasis,
       textHeightBehavior: widget.textHeightBehavior,
       selectionColor: widget.selectionColor,
+    );
+  }
+
+  Widget _buildTableWidget(
+    List<html.Element> tableRows, {
+    required MarkdownTableStyle tableStyle,
+    required InlineSpan blockSpacer,
+    required TextStyle? headStyle,
+    required TextStyle? bodyStyle,
+  }) {
+    final cells = tableRows.map((row) => row.nodes.whereType<html.Element>());
+    return Table(
+      columnWidths: tableStyle.columnWidths,
+      defaultColumnWidth: tableStyle.defaultColumnWidth,
+      border: tableStyle.border,
+      defaultVerticalAlignment: tableStyle.defaultVerticalAlignment,
+      children: [
+        for (var i = 0; i < tableRows.length; i++)
+          TableRow(
+            decoration: switch (tableRows[i].parent?.localName) {
+              'thead' => tableStyle.headDecoration ?? tableStyle.decoration,
+              'tbody' => tableStyle.decoration,
+              _ => null,
+            },
+            children: List.generate(
+              cells.first.length,
+              (j) {
+                final cell = cells.elementAt(i).elementAtOrNull(j);
+                if (cell == null) return const SizedBox.shrink();
+                return TableCell(
+                  child: Padding(
+                    padding: tableStyle.cellsPadding,
+                    child: _buildRichTextWidget(
+                      style: switch (cell.localName) {
+                        'th' => headStyle,
+                        _ => bodyStyle,
+                      },
+                      textAlign: switch (cell.localName) {
+                        'th' => tableStyle.headAlign,
+                        _ => tableStyle.textAlign,
+                      },
+                      maxLines: tableStyle.cellsMaxLines,
+                      children: _buildRichTextTree(
+                        cell.nodes,
+                        blockSpacer: blockSpacer,
+                      ).toList(),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+      ],
     );
   }
 
@@ -293,6 +359,14 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
                   : MarkdownListType.ordered,
               level: listLevel,
               start: int.parse(node.attributes['start'] ?? '1'),
+            );
+
+          case 'table':
+            yield _buildTableSpan(
+              node.nodes,
+              blockSpacer: blockSpacer,
+              headStyle: _styleSheet.textStyles['th'],
+              bodyStyle: _styleSheet.textStyles['td'],
             );
 
           case 'blockquote':
@@ -440,6 +514,56 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
     }
   }
 
+  InlineSpan _buildTableSpan(
+    List<html.Node> nodes, {
+    required InlineSpan blockSpacer,
+    required TextStyle? headStyle,
+    required TextStyle? bodyStyle,
+  }) {
+    final tableStyle = _styleSheet.table;
+    final tableRows = [
+      for (final node in nodes.whereType<html.Element>())
+        ...node.nodes
+            .whereType<html.Element>()
+            .where((node) => node.localName == 'tr'),
+    ];
+    final columnWidths = List.generate(
+      tableRows.first.nodes.whereType<html.Element>().length,
+      (i) => tableStyle.columnWidths?[i] ?? tableStyle.defaultColumnWidth,
+    );
+    final tableWidget = _buildTableWidget(
+      tableRows,
+      tableStyle: tableStyle,
+      blockSpacer: blockSpacer,
+      headStyle: headStyle,
+      bodyStyle: bodyStyle,
+    );
+    const scrollableTypes = [
+      FixedColumnWidth,
+      IntrinsicColumnWidth,
+    ];
+    return WidgetSpan(
+      alignment: PlaceholderAlignment.middle,
+      child: Padding(
+        padding: tableStyle.margin,
+        child: columnWidths.any((e) => !scrollableTypes.contains(e.runtimeType))
+            ? tableWidget
+            : _ScrollControllerProvider(
+                builder: (context, controller) => Scrollbar(
+                  controller: controller,
+                  thumbVisibility: tableStyle.thumbVisibility,
+                  child: SingleChildScrollView(
+                    controller: controller,
+                    scrollDirection: Axis.horizontal,
+                    padding: tableStyle.padding,
+                    child: tableWidget,
+                  ),
+                ),
+              ),
+      ),
+    );
+  }
+
   InlineSpan _buildBlockquoteSpan(
     List<html.Node> nodes, {
     required InlineSpan blockSpacer,
@@ -481,14 +605,23 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
       child: Container(
         decoration: blockStyle.decoration,
         alignment: blockStyle.alignment,
-        padding: blockStyle.padding,
         margin: blockStyle.margin,
-        child: _buildRichTextWidget(
-          text: (text.characters.lastOrNull == '\n')
-              ? text.substring(0, text.length - 1)
-              : text,
-          style: textStyle,
-          textAlign: TextAlign.left,
+        child: _ScrollControllerProvider(
+          builder: (context, controller) => Scrollbar(
+            controller: controller,
+            child: SingleChildScrollView(
+              controller: controller,
+              scrollDirection: Axis.horizontal,
+              padding: blockStyle.padding,
+              child: _buildRichTextWidget(
+                text: (text.characters.lastOrNull == '\n')
+                    ? text.substring(0, text.length - 1)
+                    : text,
+                style: textStyle,
+                textAlign: TextAlign.left,
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -523,5 +656,30 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
             ),
       ),
     );
+  }
+}
+
+class _ScrollControllerProvider extends StatefulWidget {
+  const _ScrollControllerProvider({
+    required this.builder,
+  });
+
+  final Widget Function(BuildContext, ScrollController) builder;
+
+  @override
+  State<_ScrollControllerProvider> createState() =>
+      _ScrollControllerProviderState();
+}
+
+class _ScrollControllerProviderState extends State<_ScrollControllerProvider> {
+  final _controller = ScrollController();
+
+  @override
+  Widget build(BuildContext context) => widget.builder(context, _controller);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 }

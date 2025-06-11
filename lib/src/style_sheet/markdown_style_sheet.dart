@@ -8,6 +8,7 @@ part 'markdown_code_block_style.dart';
 part 'markdown_horizontal_rule_style.dart';
 part 'markdown_image_style.dart';
 part 'markdown_list_style.dart';
+part 'markdown_table_style.dart';
 
 /// A class that defines the styles used for rendering Markdown elements.
 class MarkdownStyleSheet {
@@ -27,6 +28,7 @@ class MarkdownStyleSheet {
     this.del,
     this.stylesExtension = const {},
     this.list = const MarkdownListStyle(),
+    this.table = const MarkdownTableStyle(),
     this.blockquote = const MarkdownBlockquoteStyle(),
     this.codeblock = const MarkdownCodeBlockStyle(),
     this.image = const MarkdownImageStyle(),
@@ -52,6 +54,8 @@ class MarkdownStyleSheet {
           'pre': codeblock.textStyle ?? code,
           's': del,
           'strong': strong,
+          'th': table.headStyle ?? table.textStyle ?? p,
+          'td': table.textStyle ?? p,
           ...stylesExtension,
         });
 
@@ -97,6 +101,9 @@ class MarkdownStyleSheet {
   /// The style for lists.
   final MarkdownListStyle list;
 
+  /// The style for tables.
+  final MarkdownTableStyle table;
+
   /// The style for blockquotes.
   final MarkdownBlockquoteStyle blockquote;
 
@@ -132,6 +139,14 @@ class MarkdownStyleSheet {
         em: const TextStyle(fontStyle: FontStyle.italic),
         strong: const TextStyle(fontWeight: FontWeight.bold),
         del: const TextStyle(decoration: TextDecoration.lineThrough),
+        list: MarkdownListStyle(
+          textStyle: theme.textTheme.bodyMedium,
+        ),
+        table: MarkdownTableStyle(
+          headStyle: const TextStyle(fontWeight: FontWeight.w600),
+          textStyle: theme.textTheme.bodyMedium,
+          border: TableBorder.all(color: theme.dividerColor),
+        ),
         blockquote: MarkdownBlockquoteStyle(
           decoration: BoxDecoration(
             color: Colors.blue.shade100,
@@ -193,6 +208,21 @@ class MarkdownStyleSheet {
       del: theme.textTheme.textStyle.copyWith(
         decoration: TextDecoration.lineThrough,
       ),
+      list: MarkdownListStyle(
+        textStyle: theme.textTheme.textStyle,
+      ),
+      table: MarkdownTableStyle(
+        headStyle: theme.textTheme.textStyle.copyWith(
+          fontWeight: FontWeight.w600,
+        ),
+        textStyle: theme.textTheme.textStyle,
+        border: TableBorder.all(color: CupertinoColors.separator, width: 0),
+        decoration: BoxDecoration(
+          color: (theme.brightness == Brightness.dark)
+              ? CupertinoColors.systemGrey6.darkColor
+              : CupertinoColors.systemGrey6.color,
+        ),
+      ),
       blockquote: MarkdownBlockquoteStyle(
         decoration: BoxDecoration(
           color: (theme.brightness == Brightness.dark)
@@ -241,6 +271,7 @@ class MarkdownStyleSheet {
       del: del!.merge(other.del),
       stylesExtension: {...stylesExtension, ...other.stylesExtension},
       list: list.merge(other.list),
+      table: table.merge(other.table),
       blockquote: blockquote.merge(other.blockquote),
       codeblock: codeblock.merge(other.codeblock),
       image: image.merge(other.image),
@@ -266,6 +297,7 @@ class MarkdownStyleSheet {
         other.strong == strong &&
         other.del == del &&
         other.list == list &&
+        other.table == table &&
         mapEquals(other.stylesExtension, stylesExtension) &&
         other.blockquote == blockquote &&
         other.codeblock == codeblock &&
@@ -289,6 +321,7 @@ class MarkdownStyleSheet {
         strong,
         del,
         list,
+        table,
         stylesExtension,
         blockquote,
         codeblock,
