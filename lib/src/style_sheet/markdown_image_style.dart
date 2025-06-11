@@ -4,10 +4,10 @@ part of 'markdown_style_sheet.dart';
 class MarkdownImageStyle {
   /// Creates a [MarkdownImageStyle] instance.
   ///
-  /// The [alignment] defaults to [PlaceholderAlignment.bottom] if not specified.
+  /// The [alignment] defaults to [PlaceholderAlignment.middle] if not specified.
   const MarkdownImageStyle({
     this.textStyle,
-    this.alignment = PlaceholderAlignment.bottom,
+    this.alignment = PlaceholderAlignment.middle,
     this.baseline,
   });
 

@@ -599,14 +599,23 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
       child: Container(
         decoration: blockStyle.decoration,
         alignment: blockStyle.alignment,
-        padding: blockStyle.padding,
         margin: blockStyle.margin,
-        child: _buildRichTextWidget(
-          text: (text.characters.lastOrNull == '\n')
-              ? text.substring(0, text.length - 1)
-              : text,
-          style: textStyle,
-          textAlign: TextAlign.left,
+        child: _ScrollControllerProvider(
+          builder: (context, controller) => Scrollbar(
+            controller: controller,
+            child: SingleChildScrollView(
+              controller: controller,
+              scrollDirection: Axis.horizontal,
+              padding: blockStyle.padding,
+              child: _buildRichTextWidget(
+                text: (text.characters.lastOrNull == '\n')
+                    ? text.substring(0, text.length - 1)
+                    : text,
+                style: textStyle,
+                textAlign: TextAlign.left,
+              ),
+            ),
+          ),
         ),
       ),
     );
