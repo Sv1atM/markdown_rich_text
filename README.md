@@ -6,6 +6,7 @@ Which features are supported for now:
 - Headings (`<h1>`...`<h6>`)
 - Links (`<a>`)
 - Lists (`<ul>`, `<ol>`, `<li>`)
+- Tables (`<table>`, `<thead>`, `<tbody>` `<tr>`, `<th>`, `<td>`)
 - Blockquotes (`<blockquote>`)
 - Code blocks (`<pre>`, `<code>`)
 - Horizontal rules (`<hr>`)
