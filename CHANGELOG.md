@@ -3,6 +3,7 @@
 * Added tables support.
 * Made a code block scrollable.
 * Changed images span default alignment.
+* Fix whitespaces trimming in markdown texts.
 
 ## 0.1.0
 

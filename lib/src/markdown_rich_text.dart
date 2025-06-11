@@ -144,10 +144,16 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
   late MarkdownStyleSheet _styleSheet;
 
   List<html.Node> _parseMarkdown(String text) {
-    final input = renderToHtml(
-      _document.parse(text),
-      enableTagfilter: widget.settings.enableTagfilter,
-    );
+    final leadingSpaces = RegExp(r'^ +').firstMatch(text)?.group(0)?.length;
+    final trailingSpaces = RegExp(r' +$').firstMatch(text)?.group(0)?.length;
+    final input = [
+      if (leadingSpaces != null) ' ' * leadingSpaces,
+      renderToHtml(
+        _document.parse(text),
+        enableTagfilter: widget.settings.enableTagfilter,
+      ),
+      if (trailingSpaces != null) ' ' * trailingSpaces,
+    ].join();
     return parseFragment(input).nodes;
   }
 
