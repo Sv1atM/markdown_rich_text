@@ -140,8 +140,11 @@ class MarkdownRichText extends StatefulWidget {
 }
 
 class _MarkdownRichTextState extends State<MarkdownRichText> {
+  late TextScaler _textScaler;
   late Document _document;
   late MarkdownStyleSheet _styleSheet;
+
+  double get _scaleFactor => _textScaler.scale(1);
 
   List<html.Node> _parseMarkdown(String text) {
     final leadingSpaces = RegExp(r'^ +').firstMatch(text)?.group(0)?.length;
@@ -182,6 +185,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _textScaler = widget.textScaler ?? MediaQuery.textScalerOf(context);
     _createStyleSheet();
   }
 
@@ -193,6 +197,9 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
         oldWidget.styleSheetTheme != widget.styleSheetTheme) {
       _createStyleSheet();
     }
+    if (oldWidget.textScaler != widget.textScaler) {
+      _textScaler = widget.textScaler ?? MediaQuery.textScalerOf(context);
+    }
   }
 
   @override
@@ -203,7 +210,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
     );
 
     return _buildRichTextWidget(
-      textScaler: widget.textScaler ?? MediaQuery.textScalerOf(context),
+      textScaler: _textScaler,
       style: _styleSheet.p,
       overflow: widget.overflow,
       maxLines: widget.maxLines,
@@ -245,12 +252,13 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
     required InlineSpan blockSpacer,
     required TextStyle? headStyle,
     required TextStyle? bodyStyle,
+    required double scale,
   }) {
     final cells = tableRows.map((row) => row.nodes.whereType<html.Element>());
     return Table(
       columnWidths: tableStyle.columnWidths,
       defaultColumnWidth: tableStyle.defaultColumnWidth,
-      border: tableStyle.border,
+      border: tableStyle.border?.scale(scale),
       defaultVerticalAlignment: tableStyle.defaultVerticalAlignment,
       children: [
         for (var i = 0; i < tableRows.length; i++)
@@ -267,7 +275,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
                 if (cell == null) return const SizedBox.shrink();
                 return TableCell(
                   child: Padding(
-                    padding: tableStyle.cellsPadding,
+                    padding: tableStyle.cellsPadding * scale,
                     child: _buildRichTextWidget(
                       style: switch (cell.localName) {
                         'th' => headStyle,
@@ -341,6 +349,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
     required InlineSpan blockSpacer,
     TextStyle? style,
     int listLevel = 0,
+    int blockquoteLevel = 0,
     VoidCallback? onTap,
   }) sync* {
     for (final node in nodes) {
@@ -374,6 +383,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
               node.nodes,
               blockSpacer: blockSpacer,
               textStyle: _styleSheet.textStyles[node.localName],
+              level: blockquoteLevel,
             );
 
           case 'pre':
@@ -393,6 +403,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
                 alt: node.attributes['alt'],
                 width: double.tryParse(node.attributes['width'] ?? ''),
                 height: double.tryParse(node.attributes['height'] ?? ''),
+                scale: _scaleFactor,
               ),
               textStyle: _styleSheet.textStyles[node.localName],
             );
@@ -520,6 +531,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
     required TextStyle? headStyle,
     required TextStyle? bodyStyle,
   }) {
+    final scale = 1 / _scaleFactor;
     final tableStyle = _styleSheet.table;
     final tableRows = [
       for (final node in nodes.whereType<html.Element>())
@@ -537,6 +549,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
       blockSpacer: blockSpacer,
       headStyle: headStyle,
       bodyStyle: bodyStyle,
+      scale: scale,
     );
     const scrollableTypes = [
       FixedColumnWidth,
@@ -545,7 +558,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
     return WidgetSpan(
       alignment: PlaceholderAlignment.middle,
       child: Padding(
-        padding: tableStyle.margin,
+        padding: tableStyle.margin * scale,
         child: columnWidths.any((e) => !scrollableTypes.contains(e.runtimeType))
             ? tableWidget
             : _ScrollControllerProvider(
@@ -555,7 +568,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
                   child: SingleChildScrollView(
                     controller: controller,
                     scrollDirection: Axis.horizontal,
-                    padding: tableStyle.padding,
+                    padding: tableStyle.padding * scale,
                     child: tableWidget,
                   ),
                 ),
@@ -568,6 +581,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
     List<html.Node> nodes, {
     required InlineSpan blockSpacer,
     required TextStyle? textStyle,
+    required int level,
   }) {
     final blockStyle = _styleSheet.blockquote;
     return WidgetSpan(
@@ -576,7 +590,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
         decoration: blockStyle.decoration,
         alignment: blockStyle.alignment,
         padding: blockStyle.padding,
-        margin: blockStyle.margin,
+        margin: (level > 0) ? null : blockStyle.margin,
         child: _buildRichTextWidget(
           style: textStyle,
           textAlign: TextAlign.left,
@@ -589,6 +603,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
                     if (nodes.lastOrNull?.text != '\n') nodes.last,
                   ],
             blockSpacer: blockSpacer,
+            blockquoteLevel: level + 1,
           ).toList(),
         ),
       ),

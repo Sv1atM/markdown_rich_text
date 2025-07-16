@@ -25,54 +25,81 @@ Widget buildImageWidget(
   String? imageDirectory,
 }) {
   switch (config.uri.scheme) {
-    case 'https':
-    case 'http':
-      return Image.network(
-        config.uri.toString(),
-        width: config.width,
-        height: config.height,
-        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+    case 'https' || 'http':
+      return Tooltip(
+        message: config.title,
+        child: Image.network(
+          config.uri.toString(),
+          width: config.width,
+          height: config.height,
+          scale: config.scale,
+          semanticLabel: config.alt,
+          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+        ),
       );
 
     case 'resource':
-      return Image.asset(
-        config.uri.path,
-        width: config.width,
-        height: config.height,
-        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+      return Tooltip(
+        message: config.title,
+        child: Image.asset(
+          config.uri.path,
+          width: config.width,
+          height: config.height,
+          scale: config.scale,
+          semanticLabel: config.alt,
+          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+        ),
       );
 
     case 'data':
       final data = config.uri.data!;
       if (data.mimeType.startsWith('image/')) {
-        return Image.memory(
-          data.contentAsBytes(),
-          width: config.width,
-          height: config.height,
-          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+        return Tooltip(
+          message: config.title,
+          child: Image.memory(
+            data.contentAsBytes(),
+            width: config.width,
+            height: config.height,
+            scale: config.scale,
+            semanticLabel: config.alt,
+            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+          ),
         );
       }
       if (data.mimeType.startsWith('text/')) {
-        return Text(data.contentAsString());
+        return Text(
+          data.contentAsString(),
+          semanticsLabel: config.alt,
+        );
       }
       return const SizedBox.shrink();
 
     default:
       final fileUri = Uri.parse([imageDirectory ?? '', config.uri].join());
       if (fileUri.scheme == 'https' || fileUri.scheme == 'http') {
-        return Image.network(
-          fileUri.toString(),
-          width: config.width,
-          height: config.height,
-          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+        return Tooltip(
+          message: config.title,
+          child: Image.network(
+            fileUri.toString(),
+            width: config.width,
+            height: config.height,
+            scale: config.scale,
+            semanticLabel: config.alt,
+            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+          ),
         );
       } else {
         try {
-          return Image.file(
-            File.fromUri(fileUri),
-            width: config.width,
-            height: config.height,
-            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+          return Tooltip(
+            message: config.title,
+            child: Image.file(
+              File.fromUri(fileUri),
+              width: config.width,
+              height: config.height,
+              scale: config.scale,
+              semanticLabel: config.alt,
+              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+            ),
           );
         } catch (_) {
           return const SizedBox.shrink();

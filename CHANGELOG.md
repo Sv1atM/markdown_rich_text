@@ -1,3 +1,8 @@
+## 0.1.1+1
+
+* Fixed images scaling, added `alt` and `title` attributes support.
+* Remove nested blockquote margin.
+
 ## 0.1.1
 
 * Added tables support.

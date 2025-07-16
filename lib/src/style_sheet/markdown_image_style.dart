@@ -55,6 +55,7 @@ class MarkdownImageConfig {
     this.alt,
     this.width,
     this.height,
+    this.scale = 1,
   });
 
   /// The URI of the image.
@@ -71,4 +72,7 @@ class MarkdownImageConfig {
 
   /// The desired height of the image.
   final double? height;
+
+  /// The scale factor for the image.
+  final double scale;
 }

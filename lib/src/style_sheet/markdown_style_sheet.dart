@@ -237,6 +237,7 @@ class MarkdownStyleSheet {
             ),
           ),
         ),
+        padding: const EdgeInsets.all(16),
       ),
       codeblock: MarkdownCodeBlockStyle(
         decoration: BoxDecoration(
