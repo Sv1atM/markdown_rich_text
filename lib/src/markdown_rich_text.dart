@@ -508,8 +508,6 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
             ),
           ),
         );
-      } else if (node != nodes.first && node != nodes.last) {
-        yield TextSpan(text: node.text); // '\n' symbol
       }
     }
   }
