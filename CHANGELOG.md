@@ -1,3 +1,8 @@
+## 0.1.2
+
+* Refined list formatting.
+* Upgraded dependencies.
+
 ## 0.1.1
 
 * Added tables support.
