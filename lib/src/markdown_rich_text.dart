@@ -496,9 +496,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
                   child: _buildRichTextWidget(
                     style: textStyle,
                     children: _buildRichTextTree(
-                      (node.nodes.lastOrNull?.text == '\n')
-                          ? node.nodes.sublist(0, node.nodes.length - 1)
-                          : node.nodes,
+                      node.nodes.where((node) => node.text != '\n').toList(),
                       blockSpacer: blockSpacer,
                       listLevel: level + 1,
                     ).toList(),
@@ -508,8 +506,6 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
             ),
           ),
         );
-      } else if (node != nodes.first && node != nodes.last) {
-        yield TextSpan(text: node.text); // '\n' symbol
       }
     }
   }
