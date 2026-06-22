@@ -1,3 +1,7 @@
+## 0.1.3
+
+* Fixed ordered list layout issue.
+
 ## 0.1.2
 
 * Refined list formatting.
@@ -8,7 +12,7 @@
 * Added tables support.
 * Made a code block scrollable.
 * Changed images span default alignment.
-* Fix whitespaces trimming in markdown texts.
+* Fix whitespaces trimming in Markdown texts.
 
 ## 0.1.0
 
