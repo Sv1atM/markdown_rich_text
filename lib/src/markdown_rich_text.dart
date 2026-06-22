@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:flutter/gestures.dart' show TapGestureRecognizer;
 import 'package:flutter/material.dart';
 import 'package:html/dom.dart' as html;
@@ -437,26 +438,33 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
         .whereType<html.Element>()
         .where((element) => element.localName == 'li')
         .toList();
+    final maxIndex = start + listItems.length - 1;
     final bulletStyle = (textStyle ?? const TextStyle()).merge(
       switch (type) {
         MarkdownListType.unordered => listStyle.bulletStyle,
         MarkdownListType.ordered => listStyle.numberStyle,
       },
     );
+    final widestDigit = {
+      for (var i = 0; i < 10; i++)
+        i: TextPainter(
+          text: TextSpan(text: i.toString(), style: bulletStyle),
+          textDirection: TextDirection.ltr,
+        )..layout(),
+    }.entries.sorted((a, b) => b.value.width.compareTo(a.value.width)).first;
     final bulletTextPainter = TextPainter(
       text: TextSpan(
         text: switch (type) {
           MarkdownListType.unordered => listStyle.bullet,
-          MarkdownListType.ordered => '${listItems.length}.',
+          MarkdownListType.ordered => [
+              widestDigit.key.toString() * maxIndex.toString().length,
+              '.',
+            ].join(),
         },
         style: bulletStyle,
       ),
       textDirection: TextDirection.ltr,
     )..layout();
-    final bulletWidth = switch (type) {
-      MarkdownListType.unordered => bulletTextPainter.width,
-      MarkdownListType.ordered => bulletTextPainter.width.ceil() + 2.0,
-    };
     final bulletPadding = switch (type) {
       MarkdownListType.unordered => listStyle.bulletPadding,
       MarkdownListType.ordered => listStyle.numberPadding,
@@ -479,7 +487,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
                 Padding(
                   padding: bulletPadding,
                   child: SizedBox(
-                    width: bulletWidth,
+                    width: bulletTextPainter.width,
                     child: index.isNegative
                         ? null
                         : _buildRichTextWidget(
