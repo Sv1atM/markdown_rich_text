@@ -9,7 +9,7 @@ environment:
   flutter: ">=3.27.1"
 
 dependencies:
-  collection: any
+  collection: ^1.19.1
   flutter:
     sdk: flutter
   html: ^0.15.6
