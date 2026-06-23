@@ -438,17 +438,17 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
         .whereType<html.Element>()
         .where((element) => element.localName == 'li')
         .toList();
-    final maxIndex = start + listItems.length - 1;
     final bulletStyle = (textStyle ?? const TextStyle()).merge(
       switch (type) {
         MarkdownListType.unordered => listStyle.bulletStyle,
         MarkdownListType.ordered => listStyle.numberStyle,
       },
     );
-    final widestDigit = {
+    final digitsCount = (start + listItems.length - 1).toString().length;
+    final widestNumber = {
       for (var i = 0; i < 10; i++)
         i: TextPainter(
-          text: TextSpan(text: i.toString(), style: bulletStyle),
+          text: TextSpan(text: '$i' * digitsCount, style: bulletStyle),
           textDirection: TextDirection.ltr,
         )..layout(),
     }.entries.sorted((a, b) => b.value.width.compareTo(a.value.width)).first;
@@ -456,10 +456,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
       text: TextSpan(
         text: switch (type) {
           MarkdownListType.unordered => listStyle.bullet,
-          MarkdownListType.ordered => [
-              widestDigit.key.toString() * maxIndex.toString().length,
-              '.',
-            ].join(),
+          MarkdownListType.ordered => '${widestNumber.key}' * digitsCount + '.',
         },
         style: bulletStyle,
       ),
