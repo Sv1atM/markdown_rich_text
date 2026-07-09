@@ -1,3 +1,8 @@
+## 0.1.4
+
+* Tweak ordered list layout algorithm.
+* Add `MarkdownListStyle.shrinkWrap` property.
+
 ## 0.1.3
 
 * Fixed ordered list layout issue.

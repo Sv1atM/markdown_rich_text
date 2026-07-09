@@ -11,6 +11,7 @@ class MarkdownListStyle {
     this.bulletPadding = const EdgeInsets.only(right: 8),
     this.numberStyle,
     this.numberPadding = const EdgeInsets.only(right: 4),
+    this.shrinkWrap = false,
   });
 
   /// The indentation for list items.
@@ -34,6 +35,9 @@ class MarkdownListStyle {
   /// The padding applied to the number in ordered lists.
   final EdgeInsetsGeometry numberPadding;
 
+  /// Whether the list should shrink wrap its content (affects ordered list).
+  final bool shrinkWrap;
+
   /// Merges this [MarkdownListStyle] with another one.
   MarkdownListStyle merge(MarkdownListStyle? other) {
     if (other == null) return this;
@@ -45,6 +49,7 @@ class MarkdownListStyle {
       bulletPadding: other.bulletPadding,
       numberStyle: other.numberStyle ?? numberStyle,
       numberPadding: other.numberPadding,
+      shrinkWrap: other.shrinkWrap,
     );
   }
 
@@ -58,7 +63,8 @@ class MarkdownListStyle {
         other.bulletStyle == bulletStyle &&
         other.bulletPadding == bulletPadding &&
         other.numberStyle == numberStyle &&
-        other.numberPadding == numberPadding;
+        other.numberPadding == numberPadding &&
+        other.shrinkWrap == shrinkWrap;
   }
 
   @override
@@ -70,5 +76,6 @@ class MarkdownListStyle {
         bulletPadding,
         numberStyle,
         numberPadding,
+        shrinkWrap,
       ]);
 }

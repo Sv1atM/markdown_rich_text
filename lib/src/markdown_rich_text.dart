@@ -1,4 +1,3 @@
-import 'package:collection/collection.dart';
 import 'package:flutter/gestures.dart' show TapGestureRecognizer;
 import 'package:flutter/material.dart';
 import 'package:html/dom.dart' as html;
@@ -445,23 +444,17 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
       },
     );
     final digitsCount = (start + listItems.length - 1).toString().length;
-    final widestNumber = {
-      for (var i = 0; i < 10; i++)
-        i: TextPainter(
-          text: TextSpan(text: '$i' * digitsCount, style: bulletStyle),
-          textDirection: TextDirection.ltr,
-        )..layout(),
-    }.entries.sorted((a, b) => b.value.width.compareTo(a.value.width)).first;
-    final bulletTextPainter = TextPainter(
-      text: TextSpan(
-        text: switch (type) {
-          MarkdownListType.unordered => listStyle.bullet,
-          MarkdownListType.ordered => '${widestNumber.key}' * digitsCount + '.',
-        },
-        style: bulletStyle,
-      ),
-      textDirection: TextDirection.ltr,
-    )..layout();
+    final bulletConstraints = BoxConstraints(
+      minWidth: (listStyle.shrinkWrap || type == MarkdownListType.unordered)
+          ? 0
+          : List.generate(10, (i) {
+              final text = i.toString() * digitsCount + '.';
+              return TextPainter(
+                text: TextSpan(text: text, style: bulletStyle),
+                textDirection: TextDirection.ltr,
+              )..layout();
+            }).reduce((a, b) => a.width > b.width ? a : b).width,
+    );
     final bulletPadding = switch (type) {
       MarkdownListType.unordered => listStyle.bulletPadding,
       MarkdownListType.ordered => listStyle.numberPadding,
@@ -483,8 +476,8 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
               children: [
                 Padding(
                   padding: bulletPadding,
-                  child: SizedBox(
-                    width: bulletTextPainter.width,
+                  child: ConstrainedBox(
+                    constraints: bulletConstraints,
                     child: index.isNegative
                         ? null
                         : _buildRichTextWidget(
