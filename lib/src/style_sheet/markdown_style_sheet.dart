@@ -1,7 +1,8 @@
 import 'package:flutter/cupertino.dart'
-    show CupertinoThemeData, CupertinoColors;
-import 'package:flutter/foundation.dart';
+    show CupertinoColors, CupertinoThemeData;
+import 'package:flutter/foundation.dart' show mapEquals;
 import 'package:flutter/material.dart';
+import 'package:html/dom.dart' as html show Element, Node;
 
 part 'markdown_blockquote_style.dart';
 part 'markdown_code_block_style.dart';
@@ -10,9 +11,11 @@ part 'markdown_image_style.dart';
 part 'markdown_list_style.dart';
 part 'markdown_table_style.dart';
 
+typedef ElementBuilder = Iterable<InlineSpan> Function(MarkdownNode);
+
 /// A class that defines the styles used for rendering Markdown elements.
 class MarkdownStyleSheet {
-  /// Creates a [MarkdownStyleSheet] with the specified properties.
+  /// Creates a `MarkdownStyleSheet` with the specified properties.
   MarkdownStyleSheet({
     this.a,
     this.p,
@@ -27,6 +30,7 @@ class MarkdownStyleSheet {
     this.strong,
     this.del,
     this.stylesExtension = const {},
+    this.buildersExtension = const {},
     this.list = const MarkdownListStyle(),
     this.table = const MarkdownTableStyle(),
     this.blockquote = const MarkdownBlockquoteStyle(),
@@ -95,8 +99,11 @@ class MarkdownStyleSheet {
   /// The text style for deleted text.
   final TextStyle? del;
 
-  /// The extension for [TextStyle]s.
-  final Map<String, TextStyle?> stylesExtension;
+  /// The extension for `TextStyle`s.
+  final Map<String, TextStyle> stylesExtension;
+
+  /// The extension for `Element` builders.
+  final Map<String, ElementBuilder> buildersExtension;
 
   /// The style for lists.
   final MarkdownListStyle list;
@@ -122,7 +129,7 @@ class MarkdownStyleSheet {
   /// The text styles Map.
   final Map<String, TextStyle?> textStyles;
 
-  /// Creates a [MarkdownStyleSheet] from the [TextStyle]s in the provided [ThemeData].
+  /// Creates a `MarkdownStyleSheet` from the `TextStyle`s in the provided `ThemeData`.
   factory MarkdownStyleSheet.fromTheme(ThemeData theme) => MarkdownStyleSheet(
         a: const TextStyle(color: Colors.blue),
         p: theme.textTheme.bodyMedium,
@@ -162,7 +169,7 @@ class MarkdownStyleSheet {
         horizontalRule: MarkdownHorizontalRuleStyle(color: theme.dividerColor),
       );
 
-  /// Creates a [MarkdownStyleSheet] from the [TextStyle]s in the provided [CupertinoThemeData].
+  /// Creates a `MarkdownStyleSheet` from the `TextStyle`s in the provided `CupertinoThemeData`.
   factory MarkdownStyleSheet.fromCupertinoTheme(CupertinoThemeData theme) {
     final fontSize = theme.textTheme.textStyle.fontSize ?? 17;
     return MarkdownStyleSheet(
@@ -253,7 +260,7 @@ class MarkdownStyleSheet {
     );
   }
 
-  /// Merges this [MarkdownStyleSheet] with another one.
+  /// Merges this `MarkdownStyleSheet` with another one.
   MarkdownStyleSheet merge(MarkdownStyleSheet? other) {
     if (other == null) return this;
     return MarkdownStyleSheet(
@@ -270,6 +277,7 @@ class MarkdownStyleSheet {
       strong: strong!.merge(other.strong),
       del: del!.merge(other.del),
       stylesExtension: {...stylesExtension, ...other.stylesExtension},
+      buildersExtension: {...buildersExtension, ...other.buildersExtension},
       list: list.merge(other.list),
       table: table.merge(other.table),
       blockquote: blockquote.merge(other.blockquote),
@@ -299,6 +307,7 @@ class MarkdownStyleSheet {
         other.list == list &&
         other.table == table &&
         mapEquals(other.stylesExtension, stylesExtension) &&
+        mapEquals(other.buildersExtension, buildersExtension) &&
         other.blockquote == blockquote &&
         other.codeblock == codeblock &&
         other.image == image &&
@@ -323,10 +332,41 @@ class MarkdownStyleSheet {
         list,
         table,
         stylesExtension,
+        buildersExtension,
         blockquote,
         codeblock,
         image,
         horizontalRule,
         blockSpacing,
       ]);
+}
+
+/// Represents a parsed Markdown element and its rendering context.
+class MarkdownNode {
+  /// Creates a new `MarkdownNode` instance.
+  const MarkdownNode({
+    required this.element,
+    required this.styleSheet,
+    required this.textStyle,
+    required this.depthLevel,
+    required this.parseChildren,
+  });
+
+  /// The source HTML element for this node.
+  final html.Element element;
+
+
+  final MarkdownStyleSheet styleSheet;
+
+  /// The text style associated with this node.
+  final TextStyle? textStyle;
+
+  /// The current nesting depth level.
+  final int depthLevel;
+
+  /// Parser for child HTML nodes. Accepts an optional `depthLevel` override.
+  final List<InlineSpan> Function(
+    List<html.Node>, {
+    int depthLevel,
+  }) parseChildren;
 }

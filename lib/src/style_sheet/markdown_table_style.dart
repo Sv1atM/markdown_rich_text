@@ -1,6 +1,8 @@
 part of 'markdown_style_sheet.dart';
 
+/// A style configuration class for customizing the appearance of Markdown tables.
 class MarkdownTableStyle {
+  /// Creates a `MarkdownTableStyle` with the specified properties.
   const MarkdownTableStyle({
     this.headStyle,
     this.headAlign = TextAlign.center,
@@ -19,22 +21,52 @@ class MarkdownTableStyle {
     this.padding = const EdgeInsets.only(bottom: 4),
   });
 
+  /// The text style for table header cells.
   final TextStyle? headStyle;
+
+  /// Text alignment for table header cells.
   final TextAlign headAlign;
+
+  /// Decoration applied to table header cells.
   final Decoration? headDecoration;
+
+  /// The text style for table body cells.
   final TextStyle? textStyle;
+
+  /// Text alignment for table body cells.
   final TextAlign textAlign;
+
+  /// Decoration applied to table body cells.
   final Decoration? decoration;
+
+  /// Border applied to the table.
   final TableBorder? border;
+
+  /// Column width overrides keyed by column index.
   final Map<int, TableColumnWidth>? columnWidths;
+
+  /// Default column width used when no override is provided.
   final TableColumnWidth defaultColumnWidth;
+
+  /// Default vertical alignment for table cells.
   final TableCellVerticalAlignment defaultVerticalAlignment;
+
+  /// Inner padding applied to each table cell.
   final EdgeInsets cellsPadding;
+
+  /// Maximum number of lines allowed in a cell.
   final int? cellsMaxLines;
+
+  /// Whether the scrollbar thumb is visible.
   final bool? thumbVisibility;
+
+  /// Outer margin around the table.
   final EdgeInsets margin;
+
+  /// Outer padding around the table inside scrollable area (if exists).
   final EdgeInsets padding;
 
+  /// Merges this `MarkdownTableStyle` with another one.
   MarkdownTableStyle merge(MarkdownTableStyle? other) {
     if (other == null) return this;
     return MarkdownTableStyle(

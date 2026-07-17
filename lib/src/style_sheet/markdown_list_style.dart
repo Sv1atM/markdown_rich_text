@@ -2,7 +2,7 @@ part of 'markdown_style_sheet.dart';
 
 /// A style configuration class for customizing the appearance of Markdown list items.
 class MarkdownListStyle {
-  /// Creates a [MarkdownListStyle] with the specified properties.
+  /// Creates a `MarkdownListStyle` with the specified properties.
   const MarkdownListStyle({
     this.indent = 2,
     this.textStyle,
@@ -27,18 +27,18 @@ class MarkdownListStyle {
   final TextStyle? bulletStyle;
 
   /// The padding applied to the bullet in unordered lists.
-  final EdgeInsetsGeometry bulletPadding;
+  final EdgeInsets bulletPadding;
 
   /// The text style for the number in ordered lists.
   final TextStyle? numberStyle;
 
   /// The padding applied to the number in ordered lists.
-  final EdgeInsetsGeometry numberPadding;
+  final EdgeInsets numberPadding;
 
   /// Whether the list should shrink wrap its content (affects ordered list).
   final bool shrinkWrap;
 
-  /// Merges this [MarkdownListStyle] with another one.
+  /// Merges this `MarkdownListStyle` with another one.
   MarkdownListStyle merge(MarkdownListStyle? other) {
     if (other == null) return this;
     return MarkdownListStyle(

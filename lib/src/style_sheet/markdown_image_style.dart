@@ -2,9 +2,9 @@ part of 'markdown_style_sheet.dart';
 
 /// Defines the style for images in a Markdown document.
 class MarkdownImageStyle {
-  /// Creates a [MarkdownImageStyle] instance.
+  /// Creates a `MarkdownImageStyle` instance.
   ///
-  /// The [alignment] defaults to [PlaceholderAlignment.middle] if not specified.
+  /// The `alignment` defaults to `PlaceholderAlignment.middle` if not specified.
   const MarkdownImageStyle({
     this.textStyle,
     this.alignment = PlaceholderAlignment.middle,
@@ -20,6 +20,7 @@ class MarkdownImageStyle {
   /// The baseline alignment for the image.
   final TextBaseline? baseline;
 
+  /// Merges this `MarkdownImageStyle` with another one.
   MarkdownImageStyle merge(MarkdownImageStyle? other) {
     if (other == null) return this;
     return MarkdownImageStyle(
@@ -48,8 +49,8 @@ class MarkdownImageStyle {
 
 /// Holds configuration data for an image in a Markdown document.
 class MarkdownImageConfig {
-  /// Creates a new [MarkdownImageConfig] instance.
-  MarkdownImageConfig({
+  /// Creates a new `MarkdownImageConfig` instance.
+  const MarkdownImageConfig({
     required this.uri,
     this.title,
     this.alt,

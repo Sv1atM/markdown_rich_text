@@ -2,7 +2,7 @@ part of 'markdown_style_sheet.dart';
 
 /// Defines the style properties for blockquote elements in Markdown rendering.
 class MarkdownBlockquoteStyle {
-  /// Creates a [MarkdownBlockquoteStyle] with the specified properties.
+  /// Creates a `MarkdownBlockquoteStyle` with the specified properties.
   const MarkdownBlockquoteStyle({
     this.textStyle,
     this.decoration,
@@ -26,6 +26,7 @@ class MarkdownBlockquoteStyle {
   /// The margin around the blockquote.
   final EdgeInsets margin;
 
+  /// Merges this `MarkdownBlockquoteStyle` with another one.
   MarkdownBlockquoteStyle merge(MarkdownBlockquoteStyle? other) {
     if (other == null) return this;
     return MarkdownBlockquoteStyle(

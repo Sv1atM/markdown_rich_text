@@ -2,7 +2,7 @@ part of 'markdown_style_sheet.dart';
 
 /// Defines the style for code blocks in Markdown rendering.
 class MarkdownCodeBlockStyle {
-  /// Creates a [MarkdownCodeBlockStyle] with the specified properties.
+  /// Creates a `MarkdownCodeBlockStyle` with the specified properties.
   const MarkdownCodeBlockStyle({
     this.textStyle,
     this.decoration,
@@ -26,6 +26,7 @@ class MarkdownCodeBlockStyle {
   /// The margin outside the code block container.
   final EdgeInsets margin;
 
+  /// Merges this `MarkdownCodeBlockStyle` with another one.
   MarkdownCodeBlockStyle merge(MarkdownCodeBlockStyle? other) {
     if (other == null) return this;
     return MarkdownCodeBlockStyle(

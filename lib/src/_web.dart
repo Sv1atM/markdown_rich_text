@@ -26,8 +26,7 @@ Widget buildImageWidget(
   String? imageDirectory,
 }) {
   switch (config.uri.scheme) {
-    case 'https':
-    case 'http':
+    case 'https' || 'http':
       return Image.network(
         config.uri.toString(),
         width: config.width,
