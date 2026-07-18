@@ -167,6 +167,11 @@ class MarkdownStyleSheet {
           ),
         ),
         horizontalRule: MarkdownHorizontalRuleStyle(color: theme.dividerColor),
+        stylesExtension: {
+          'input': theme.textTheme.bodyMedium!.copyWith(
+            color: theme.primaryColor,
+          ),
+        },
       );
 
   /// Creates a `MarkdownStyleSheet` from the `TextStyle`s in the provided `CupertinoThemeData`.
@@ -257,6 +262,11 @@ class MarkdownStyleSheet {
             ? CupertinoColors.systemGrey4.darkColor
             : CupertinoColors.systemGrey4.color,
       ),
+      stylesExtension: {
+        'input': theme.textTheme.textStyle.copyWith(
+          color: theme.primaryColor,
+        ),
+      },
     );
   }
 
@@ -276,7 +286,12 @@ class MarkdownStyleSheet {
       em: em!.merge(other.em),
       strong: strong!.merge(other.strong),
       del: del!.merge(other.del),
-      stylesExtension: {...stylesExtension, ...other.stylesExtension},
+      stylesExtension: {
+        for (final e in stylesExtension.entries)
+          e.key: e.value.merge(other.stylesExtension[e.key]),
+        for (final e in other.stylesExtension.entries)
+          if (!stylesExtension.containsKey(e.key)) e.key: e.value,
+      },
       buildersExtension: {...buildersExtension, ...other.buildersExtension},
       list: list.merge(other.list),
       table: table.merge(other.table),
@@ -348,13 +363,12 @@ class MarkdownNode {
     required this.element,
     required this.styleSheet,
     required this.textStyle,
-    required this.depthLevel,
+    required this.nestLevel,
     required this.parseChildren,
   });
 
   /// The source HTML element for this node.
   final html.Element element;
-
 
   final MarkdownStyleSheet styleSheet;
 
@@ -362,11 +376,11 @@ class MarkdownNode {
   final TextStyle? textStyle;
 
   /// The current nesting depth level.
-  final int depthLevel;
+  final int nestLevel;
 
-  /// Parser for child HTML nodes. Accepts an optional `depthLevel` override.
+  /// Parser for child HTML nodes. Accepts an optional `nestLevel` override.
   final List<InlineSpan> Function(
     List<html.Node>, {
-    int depthLevel,
+    int nestLevel,
   }) parseChildren;
 }

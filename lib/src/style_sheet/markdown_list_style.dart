@@ -4,7 +4,7 @@ part of 'markdown_style_sheet.dart';
 class MarkdownListStyle {
   /// Creates a `MarkdownListStyle` with the specified properties.
   const MarkdownListStyle({
-    this.indent = 2,
+    this.indent = 4,
     this.textStyle,
     this.bullet = '•',
     this.bulletStyle,
