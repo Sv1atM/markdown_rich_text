@@ -44,8 +44,14 @@ export 'package:markdown/src/inline_syntaxes/link_syntax.dart';
 export 'package:markdown/src/inline_syntaxes/soft_line_break_syntax.dart';
 export 'package:markdown/src/inline_syntaxes/strikethrough_syntax.dart';
 export 'package:markdown/src/inline_syntaxes/text_syntax.dart';
+export 'package:markdown/src/extension_set.dart';
 
+/// Configuration options for Markdown parsing behavior used by this package.
 class MarkdownSettings {
+  /// Creates a set of Markdown parser settings.
+  ///
+  /// Custom block and inline syntaxes can be supplied to extend or override the
+  /// default parser behavior.
   const MarkdownSettings({
     this.blockSyntaxes = const [],
     this.inlineSyntaxes = const [],
@@ -53,9 +59,16 @@ class MarkdownSettings {
     this.enableTagfilter = false,
   });
 
+  /// Additional block-level syntaxes to use while parsing Markdown.
   final Iterable<BlockSyntax> blockSyntaxes;
+
+  /// Additional inline syntaxes to use while parsing Markdown.
   final Iterable<InlineSyntax> inlineSyntaxes;
+
+  /// The Markdown extension set that controls enabled syntax extensions.
   final ExtensionSet? extensionSet;
+
+  /// Whether HTML tag filtering should be enabled during parsing.
   final bool enableTagfilter;
 
   @override

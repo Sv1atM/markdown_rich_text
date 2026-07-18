@@ -168,7 +168,6 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
       ),
       if (trailingSpaces != null) ' ' * trailingSpaces,
     ].join();
-    final test = parseFragment(input).nodes;
     return parseFragment(input).nodes;
   }
 
