@@ -31,6 +31,7 @@ Widget buildImageWidget(
         config.uri.toString(),
         width: config.width,
         height: config.height,
+        semanticLabel: config.alt,
         errorBuilder: (_, __, ___) => const SizedBox.shrink(),
       );
 
@@ -39,6 +40,7 @@ Widget buildImageWidget(
         config.uri.path,
         width: config.width,
         height: config.height,
+        semanticLabel: config.alt,
         errorBuilder: (_, __, ___) => const SizedBox.shrink(),
       );
 
@@ -49,6 +51,7 @@ Widget buildImageWidget(
           data.contentAsBytes(),
           width: config.width,
           height: config.height,
+          semanticLabel: config.alt,
           errorBuilder: (_, __, ___) => const SizedBox.shrink(),
         );
       }
@@ -77,6 +80,7 @@ Widget buildImageWidget(
         },
         width: config.width,
         height: config.height,
+        semanticLabel: config.alt,
         errorBuilder: (_, __, ___) => const SizedBox.shrink(),
       );
   }

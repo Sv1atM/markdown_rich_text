@@ -146,9 +146,6 @@ class MarkdownStyleSheet {
         em: const TextStyle(fontStyle: FontStyle.italic),
         strong: const TextStyle(fontWeight: FontWeight.bold),
         del: const TextStyle(decoration: TextDecoration.lineThrough),
-        list: MarkdownListStyle(
-          textStyle: theme.textTheme.bodyMedium,
-        ),
         table: MarkdownTableStyle(
           headStyle: const TextStyle(fontWeight: FontWeight.w600),
           textStyle: theme.textTheme.bodyMedium,
@@ -219,9 +216,6 @@ class MarkdownStyleSheet {
       ),
       del: theme.textTheme.textStyle.copyWith(
         decoration: TextDecoration.lineThrough,
-      ),
-      list: MarkdownListStyle(
-        textStyle: theme.textTheme.textStyle,
       ),
       table: MarkdownTableStyle(
         headStyle: theme.textTheme.textStyle.copyWith(

@@ -7,6 +7,7 @@ class MarkdownTableStyle {
     this.headStyle,
     this.headAlign = TextAlign.center,
     this.headDecoration,
+    this.headVerticalAlignment,
     this.textStyle,
     this.textAlign = TextAlign.left,
     this.decoration,
@@ -32,6 +33,9 @@ class MarkdownTableStyle {
 
   /// The text style for table body cells.
   final TextStyle? textStyle;
+
+  /// Vertical alignment for table header cells.
+  final TableCellVerticalAlignment? headVerticalAlignment;
 
   /// Text alignment for table body cells.
   final TextAlign textAlign;
@@ -73,6 +77,8 @@ class MarkdownTableStyle {
       headStyle: headStyle?.merge(other.headStyle) ?? other.headStyle,
       headAlign: other.headAlign,
       headDecoration: other.headDecoration ?? headDecoration,
+      headVerticalAlignment:
+          other.headVerticalAlignment ?? headVerticalAlignment,
       textStyle: textStyle?.merge(other.textStyle) ?? other.textStyle,
       textAlign: other.textAlign,
       decoration: other.decoration ?? decoration,

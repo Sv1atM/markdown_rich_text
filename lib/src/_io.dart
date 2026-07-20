@@ -30,6 +30,7 @@ Widget buildImageWidget(
         config.uri.toString(),
         width: config.width,
         height: config.height,
+        semanticLabel: config.alt,
         errorBuilder: (_, __, ___) => const SizedBox.shrink(),
       );
 
@@ -38,6 +39,7 @@ Widget buildImageWidget(
         config.uri.path,
         width: config.width,
         height: config.height,
+        semanticLabel: config.alt,
         errorBuilder: (_, __, ___) => const SizedBox.shrink(),
       );
 
@@ -48,6 +50,7 @@ Widget buildImageWidget(
           data.contentAsBytes(),
           width: config.width,
           height: config.height,
+          semanticLabel: config.alt,
           errorBuilder: (_, __, ___) => const SizedBox.shrink(),
         );
       }
@@ -58,11 +61,12 @@ Widget buildImageWidget(
 
     default:
       final fileUri = Uri.parse([imageDirectory ?? '', config.uri].join());
-      if (fileUri.scheme == 'https' || fileUri.scheme == 'http') {
+      if (const {'https', 'http'}.contains(fileUri.scheme)) {
         return Image.network(
           fileUri.toString(),
           width: config.width,
           height: config.height,
+          semanticLabel: config.alt,
           errorBuilder: (_, __, ___) => const SizedBox.shrink(),
         );
       } else {
@@ -71,6 +75,7 @@ Widget buildImageWidget(
             File.fromUri(fileUri),
             width: config.width,
             height: config.height,
+            semanticLabel: config.alt,
             errorBuilder: (_, __, ___) => const SizedBox.shrink(),
           );
         } catch (_) {

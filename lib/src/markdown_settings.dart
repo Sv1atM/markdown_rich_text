@@ -25,6 +25,7 @@ export 'package:markdown/src/block_syntaxes/setext_header_with_id_syntax.dart';
 export 'package:markdown/src/block_syntaxes/table_syntax.dart';
 export 'package:markdown/src/block_syntaxes/unordered_list_syntax.dart';
 export 'package:markdown/src/block_syntaxes/unordered_list_with_checkbox_syntax.dart';
+export 'package:markdown/src/extension_set.dart';
 export 'package:markdown/src/inline_syntaxes/autolink_extension_syntax.dart';
 export 'package:markdown/src/inline_syntaxes/autolink_syntax.dart';
 export 'package:markdown/src/inline_syntaxes/code_syntax.dart';
@@ -44,7 +45,6 @@ export 'package:markdown/src/inline_syntaxes/link_syntax.dart';
 export 'package:markdown/src/inline_syntaxes/soft_line_break_syntax.dart';
 export 'package:markdown/src/inline_syntaxes/strikethrough_syntax.dart';
 export 'package:markdown/src/inline_syntaxes/text_syntax.dart';
-export 'package:markdown/src/extension_set.dart';
 
 /// Configuration options for Markdown parsing behavior used by this package.
 class MarkdownSettings {
