@@ -7,9 +7,12 @@ class MarkdownBlockquoteStyle {
     this.textStyle,
     this.decoration,
     this.alignment,
-    this.padding = const EdgeInsets.all(8),
+    this.padding = const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
     this.margin = EdgeInsets.zero,
-  });
+    this.shrinkWrap = true,
+  }) : constraints = shrinkWrap
+            ? const BoxConstraints(minWidth: 0)
+            : const BoxConstraints(minWidth: double.infinity);
 
   /// The text style to apply to blockquote content.
   final TextStyle? textStyle;
@@ -26,6 +29,12 @@ class MarkdownBlockquoteStyle {
   /// The margin around the blockquote.
   final EdgeInsets margin;
 
+  /// Whether the blockquote should shrink-wrap its content.
+  final bool shrinkWrap;
+
+  /// Constraints of the blockquote.
+  final BoxConstraints constraints;
+
   /// Merges this `MarkdownBlockquoteStyle` with another one.
   MarkdownBlockquoteStyle merge(MarkdownBlockquoteStyle? other) {
     if (other == null) return this;
@@ -35,6 +44,7 @@ class MarkdownBlockquoteStyle {
       alignment: other.alignment ?? alignment,
       padding: other.padding,
       margin: other.margin,
+      shrinkWrap: other.shrinkWrap,
     );
   }
 
@@ -46,7 +56,8 @@ class MarkdownBlockquoteStyle {
         other.decoration == decoration &&
         other.alignment == alignment &&
         other.padding == padding &&
-        other.margin == margin;
+        other.margin == margin &&
+        other.shrinkWrap == shrinkWrap;
   }
 
   @override
@@ -56,5 +67,6 @@ class MarkdownBlockquoteStyle {
         alignment,
         padding,
         margin,
+        shrinkWrap,
       ]);
 }

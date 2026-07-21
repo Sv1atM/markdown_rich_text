@@ -277,6 +277,8 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
   }) {
     final rows = nodes.map((e) => e.nodes.whereType<html.Element>());
     final cellPadding = tableStyle.cellsPadding / _scaleFactor;
+    final headDecoration = tableStyle.headDecoration?.scale(_scaleFactor);
+    final bodyDecoration = tableStyle.decoration?.scale(_scaleFactor);
     return Table(
       columnWidths: tableStyle.columnWidths,
       defaultColumnWidth: tableStyle.defaultColumnWidth,
@@ -286,8 +288,8 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
         for (var i = 0; i < nodes.length; i++)
           TableRow(
             decoration: switch (nodes[i].parent?.localName) {
-              'thead' => tableStyle.headDecoration ?? tableStyle.decoration,
-              'tbody' => tableStyle.decoration,
+              'thead' => headDecoration ?? bodyDecoration,
+              'tbody' => bodyDecoration,
               _ => null,
             },
             children: List.generate(columnsCount, (j) {
@@ -681,7 +683,8 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
     return WidgetSpan(
       alignment: PlaceholderAlignment.middle,
       child: Container(
-        decoration: blockStyle.decoration,
+        constraints: blockStyle.constraints,
+        decoration: blockStyle.decoration?.scale(_scaleFactor),
         alignment: blockStyle.alignment,
         padding: blockStyle.padding / _scaleFactor,
         margin: blockStyle.margin / _scaleFactor,
@@ -705,7 +708,8 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
     return WidgetSpan(
       alignment: PlaceholderAlignment.middle,
       child: Container(
-        decoration: blockStyle.decoration,
+        constraints: blockStyle.constraints,
+        decoration: blockStyle.decoration?.scale(_scaleFactor),
         alignment: blockStyle.alignment,
         margin: blockStyle.margin / _scaleFactor,
         child: _ScrollControllerProvider(
@@ -783,5 +787,29 @@ class _ScrollControllerProviderState extends State<_ScrollControllerProvider> {
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+}
+
+extension _DecorationScaling on Decoration {
+  Decoration scale(double scaleFactor) {
+    final decoration = this;
+    final scale = 1 / scaleFactor;
+    if (decoration is BoxDecoration) {
+      return decoration.copyWith(
+        border: decoration.border?.scale(scale) as BoxBorder?,
+        boxShadow: decoration.boxShadow?.map((e) => e.scale(scale)).toList(),
+        gradient: decoration.gradient?.scale(scale),
+      );
+    }
+    if (decoration is ShapeDecoration) {
+      return ShapeDecoration(
+        color: decoration.color,
+        image: decoration.image,
+        gradient: decoration.gradient?.scale(scale),
+        shadows: decoration.shadows?.map((e) => e.scale(scale)).toList(),
+        shape: decoration.shape.scale(scale),
+      );
+    }
+    return decoration;
   }
 }
