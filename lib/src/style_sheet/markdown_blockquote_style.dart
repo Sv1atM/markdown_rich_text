@@ -10,9 +10,7 @@ class MarkdownBlockquoteStyle {
     this.padding = const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
     this.margin = EdgeInsets.zero,
     this.shrinkWrap = true,
-  }) : constraints = shrinkWrap
-            ? const BoxConstraints(minWidth: 0)
-            : const BoxConstraints(minWidth: double.infinity);
+  });
 
   /// The text style to apply to blockquote content.
   final TextStyle? textStyle;
@@ -31,9 +29,6 @@ class MarkdownBlockquoteStyle {
 
   /// Whether the blockquote should shrink-wrap its content.
   final bool shrinkWrap;
-
-  /// Constraints of the blockquote.
-  final BoxConstraints constraints;
 
   /// Merges this `MarkdownBlockquoteStyle` with another one.
   MarkdownBlockquoteStyle merge(MarkdownBlockquoteStyle? other) {

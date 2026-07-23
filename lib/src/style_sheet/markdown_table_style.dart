@@ -11,6 +11,7 @@ class MarkdownTableStyle {
     this.textStyle,
     this.textAlign = TextAlign.left,
     this.decoration,
+    this.applyToAll = false,
     this.border,
     this.columnWidths,
     this.defaultColumnWidth = const FlexColumnWidth(),
@@ -42,6 +43,9 @@ class MarkdownTableStyle {
 
   /// Decoration applied to table body cells.
   final Decoration? decoration;
+
+  /// Whether the `decoration` is applied to all table rows.
+  final bool applyToAll;
 
   /// Border applied to the table.
   final TableBorder? border;
@@ -82,6 +86,7 @@ class MarkdownTableStyle {
       textStyle: textStyle?.merge(other.textStyle) ?? other.textStyle,
       textAlign: other.textAlign,
       decoration: other.decoration ?? decoration,
+      applyToAll: other.applyToAll,
       border: other.border ?? border,
       columnWidths: other.columnWidths ?? columnWidths,
       defaultColumnWidth: other.defaultColumnWidth,
@@ -104,6 +109,7 @@ class MarkdownTableStyle {
         other.textStyle == textStyle &&
         other.textAlign == textAlign &&
         other.decoration == decoration &&
+        other.applyToAll == applyToAll &&
         other.border == border &&
         other.columnWidths == columnWidths &&
         other.defaultColumnWidth == defaultColumnWidth &&
@@ -123,6 +129,7 @@ class MarkdownTableStyle {
         textStyle,
         textAlign,
         decoration,
+        applyToAll,
         border,
         columnWidths,
         defaultColumnWidth,

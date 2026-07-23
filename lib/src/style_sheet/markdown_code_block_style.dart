@@ -10,9 +10,7 @@ class MarkdownCodeBlockStyle {
     this.padding = const EdgeInsets.all(8),
     this.margin = EdgeInsets.zero,
     this.shrinkWrap = true,
-  }) : constraints = shrinkWrap
-            ? const BoxConstraints(minWidth: 0)
-            : const BoxConstraints(minWidth: double.infinity);
+  });
 
   /// The text style to use for code block content.
   final TextStyle? textStyle;
@@ -31,9 +29,6 @@ class MarkdownCodeBlockStyle {
 
   /// Whether the code block should shrink-wrap its content.
   final bool shrinkWrap;
-
-  /// Constraints of the code block.
-  final BoxConstraints constraints;
 
   /// Merges this `MarkdownCodeBlockStyle` with another one.
   MarkdownCodeBlockStyle merge(MarkdownCodeBlockStyle? other) {
