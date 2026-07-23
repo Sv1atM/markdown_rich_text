@@ -1,8 +1,4 @@
-## 0.1.6
-
-No changes, version fix in `pubspec.yaml`.
-
-## 0.1.5
+## 0.2.0
 
 * Add `MarkdownStyleSheet.buildersExtension` for custom `InlineSpan` builders.
 * Add support for checkboxes in lists (ordered and unordered).
