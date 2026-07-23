@@ -1,3 +1,7 @@
+## 0.1.6
+
+No changes, version fix in `pubspec.yaml`.
+
 ## 0.1.5
 
 * Add `MarkdownStyleSheet.buildersExtension` for custom `InlineSpan` builders.
