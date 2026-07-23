@@ -2,7 +2,7 @@ part of 'markdown_style_sheet.dart';
 
 /// Defines the style for a horizontal rule in Markdown rendering.
 class MarkdownHorizontalRuleStyle {
-  /// Creates a [MarkdownHorizontalRuleStyle] with the specified properties.
+  /// Creates a `MarkdownHorizontalRuleStyle` with the specified properties.
   const MarkdownHorizontalRuleStyle({
     this.thickness = 5,
     this.color,
@@ -14,7 +14,7 @@ class MarkdownHorizontalRuleStyle {
   /// The color of the horizontal rule.
   final Color? color;
 
-  /// Merges this [MarkdownHorizontalRuleStyle] with another one.
+  /// Merges this `MarkdownHorizontalRuleStyle` with another one.
   MarkdownHorizontalRuleStyle merge(MarkdownHorizontalRuleStyle? other) {
     if (other == null) return this;
     return MarkdownHorizontalRuleStyle(

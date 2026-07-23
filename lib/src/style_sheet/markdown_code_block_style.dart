@@ -2,13 +2,14 @@ part of 'markdown_style_sheet.dart';
 
 /// Defines the style for code blocks in Markdown rendering.
 class MarkdownCodeBlockStyle {
-  /// Creates a [MarkdownCodeBlockStyle] with the specified properties.
+  /// Creates a `MarkdownCodeBlockStyle` with the specified properties.
   const MarkdownCodeBlockStyle({
     this.textStyle,
     this.decoration,
     this.alignment,
     this.padding = const EdgeInsets.all(8),
     this.margin = EdgeInsets.zero,
+    this.shrinkWrap = true,
   });
 
   /// The text style to use for code block content.
@@ -26,6 +27,10 @@ class MarkdownCodeBlockStyle {
   /// The margin outside the code block container.
   final EdgeInsets margin;
 
+  /// Whether the code block should shrink-wrap its content.
+  final bool shrinkWrap;
+
+  /// Merges this `MarkdownCodeBlockStyle` with another one.
   MarkdownCodeBlockStyle merge(MarkdownCodeBlockStyle? other) {
     if (other == null) return this;
     return MarkdownCodeBlockStyle(
@@ -34,6 +39,7 @@ class MarkdownCodeBlockStyle {
       alignment: other.alignment ?? alignment,
       padding: other.padding,
       margin: other.margin,
+      shrinkWrap: other.shrinkWrap,
     );
   }
 
@@ -45,7 +51,8 @@ class MarkdownCodeBlockStyle {
         other.decoration == decoration &&
         other.alignment == alignment &&
         other.padding == padding &&
-        other.margin == margin;
+        other.margin == margin &&
+        other.shrinkWrap == shrinkWrap;
   }
 
   @override
@@ -55,5 +62,6 @@ class MarkdownCodeBlockStyle {
         alignment,
         padding,
         margin,
+        shrinkWrap,
       ]);
 }

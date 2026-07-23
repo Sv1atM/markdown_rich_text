@@ -2,13 +2,14 @@ part of 'markdown_style_sheet.dart';
 
 /// Defines the style properties for blockquote elements in Markdown rendering.
 class MarkdownBlockquoteStyle {
-  /// Creates a [MarkdownBlockquoteStyle] with the specified properties.
+  /// Creates a `MarkdownBlockquoteStyle` with the specified properties.
   const MarkdownBlockquoteStyle({
     this.textStyle,
     this.decoration,
     this.alignment,
-    this.padding = const EdgeInsets.all(8),
+    this.padding = const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
     this.margin = EdgeInsets.zero,
+    this.shrinkWrap = true,
   });
 
   /// The text style to apply to blockquote content.
@@ -26,6 +27,10 @@ class MarkdownBlockquoteStyle {
   /// The margin around the blockquote.
   final EdgeInsets margin;
 
+  /// Whether the blockquote should shrink-wrap its content.
+  final bool shrinkWrap;
+
+  /// Merges this `MarkdownBlockquoteStyle` with another one.
   MarkdownBlockquoteStyle merge(MarkdownBlockquoteStyle? other) {
     if (other == null) return this;
     return MarkdownBlockquoteStyle(
@@ -34,6 +39,7 @@ class MarkdownBlockquoteStyle {
       alignment: other.alignment ?? alignment,
       padding: other.padding,
       margin: other.margin,
+      shrinkWrap: other.shrinkWrap,
     );
   }
 
@@ -45,7 +51,8 @@ class MarkdownBlockquoteStyle {
         other.decoration == decoration &&
         other.alignment == alignment &&
         other.padding == padding &&
-        other.margin == margin;
+        other.margin == margin &&
+        other.shrinkWrap == shrinkWrap;
   }
 
   @override
@@ -55,5 +62,6 @@ class MarkdownBlockquoteStyle {
         alignment,
         padding,
         margin,
+        shrinkWrap,
       ]);
 }
