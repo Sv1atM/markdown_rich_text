@@ -1,3 +1,15 @@
+## 0.1.5
+
+* Add `MarkdownStyleSheet.buildersExtension` for custom `InlineSpan` builders.
+* Add support for checkboxes in lists (ordered and unordered).
+* Refine styling, update some default values.
+* Add `MarkdownTableStyle.headVerticalAlignment` and `applyToAll` properties.
+* Add `MarkdownBlockquoteStyle.shrinkWrap` property.
+* Add `MarkdownCodeBlockStyle.shrinkWrap` property.
+* Disable dimensions scaling (paddings, spacings, borders).
+* Refine existing builders.
+* Update documentation.
+
 ## 0.1.4
 
 * Tweak ordered list layout algorithm.
