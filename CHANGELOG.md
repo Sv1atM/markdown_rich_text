@@ -1,3 +1,7 @@
+## 0.2.1
+
+* Add a fallback `TextBaseline` for lists when it's missing in a `TextStyle`.
+
 ## 0.2.0
 
 * Add `MarkdownStyleSheet.buildersExtension` for custom `InlineSpan` builders.

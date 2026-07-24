@@ -149,7 +149,6 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
   final _gestureRecognisers = <TapGestureRecognizer>[];
 
   late TextScaler _textScaler;
-  late DefaultTextStyle _defaultStyle;
   late Document _document;
   late MarkdownStyleSheet _styleSheet;
 
@@ -196,7 +195,6 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _textScaler = widget.textScaler ?? MediaQuery.textScalerOf(context);
-    _defaultStyle = DefaultTextStyle.of(context);
     _createStyleSheet();
   }
 
@@ -588,7 +586,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.baseline,
-          textBaseline: _defaultStyle.style.textBaseline,
+          textBaseline: textStyle.textBaseline ?? TextBaseline.alphabetic,
           children: [
             indent,
             switch (element.querySelector('input')) {
