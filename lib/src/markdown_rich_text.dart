@@ -563,7 +563,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
     );
     final digitsCount = (start + items.length - 1).toString().length;
     final bulletConstraints = BoxConstraints(
-      minWidth: (listStyle.shrinkWrap || type != MarkdownListType.unordered)
+      minWidth: (listStyle.shrinkWrap || type == MarkdownListType.unordered)
           ? 0
           : List.generate(10, (i) {
               final text = i.toString() * digitsCount + '.';

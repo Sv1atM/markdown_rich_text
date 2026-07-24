@@ -1,3 +1,7 @@
+## 0.2.2
+
+* Fix bug with extra spacing in unordered lists.
+
 ## 0.2.1
 
 * Add a fallback `TextBaseline` for lists when it's missing in a `TextStyle`.
