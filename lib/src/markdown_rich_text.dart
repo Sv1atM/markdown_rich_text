@@ -472,6 +472,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
                   yield const TextSpan(text: '\n');
 
                 case 'ol' || 'ul':
+                  final start = node.attributes['start'] ?? '';
                   yield* _buildListSpans(
                     node.nodes,
                     blockSpacer: blockSpacer,
@@ -481,7 +482,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
                       _ => MarkdownListType.unordered,
                     },
                     level: level,
-                    start: int.parse(node.attributes['start'] ?? '1'),
+                    start: int.tryParse(start) ?? 1,
                   );
 
                 case 'table':
@@ -558,7 +559,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
                     recognizer: switch (node.localName) {
                       'a' => _createGestureRecogniser(
                           onTap: () => widget.onLinkTap?.call(
-                            node.attributes['href'] as String,
+                            node.attributes['href'] ?? '',
                           ),
                         ),
                       _ => null,
@@ -711,6 +712,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
               .where((e) => e.localName == 'tr'),
         )
         .toList();
+    if (tableRows.isEmpty) return const TextSpan();
     final columnsCount = tableRows.first.nodes.whereType<html.Element>().length;
     final columnWidths = List.generate(
       columnsCount,
