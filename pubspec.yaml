@@ -5,8 +5,8 @@ issue_tracker: https://github.com/Sv1atM/markdown_rich_text/issues
 version: 1.0.0
 
 environment:
-  sdk: ^3.4.0
-  flutter: ">=3.27.1"
+  sdk: ^3.12.0
+  flutter: ">=3.44.0"
 
 dependencies:
   cupertino_ui: ^1.0.0

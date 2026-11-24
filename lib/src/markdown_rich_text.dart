@@ -168,10 +168,14 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
   };
 
   List<html.Node> _parseMarkdown(String text) {
-    final leadingSpaces =
-        _RegExps.leadingSpaces.firstMatch(text)?.group(0)?.length;
-    final trailingSpaces =
-        _RegExps.trailingSpaces.firstMatch(text)?.group(0)?.length;
+    final leadingSpaces = _RegExps.leadingSpaces
+        .firstMatch(text)
+        ?.group(0)
+        ?.length;
+    final trailingSpaces = _RegExps.trailingSpaces
+        .firstMatch(text)
+        ?.group(0)
+        ?.length;
     final input = [
       if (leadingSpaces != null) ' ' * leadingSpaces,
       renderToHtml(
@@ -349,9 +353,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
     required TextStyle bodyStyle,
   }) {
     final rows = nodes.whereType<html.Element>().toList();
-    final cells = rows
-        .map((row) => row.nodes.whereType<html.Element>().toList())
-        .toList();
+    final cells = rows.map((row) => row.children).toList();
     final cellPadding = tableStyle.cellsPadding / _scaleFactor;
     final headDecoration = tableStyle.headDecoration?.scale(_scaleFactor);
     final bodyDecoration = tableStyle.decoration?.scale(_scaleFactor);
@@ -435,10 +437,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
                 _parseMarkdown(child.text!),
                 blockSpacer: blockSpacer,
               ),
-              ...?_mapChildren(
-                child.children,
-                blockSpacer: blockSpacer,
-              ),
+              ...?_mapChildren(child.children, blockSpacer: blockSpacer),
             ],
           )
         else if (child is SpacerTextSpan) ...[
@@ -456,10 +455,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
             semanticsIdentifier: child.semanticsIdentifier,
             locale: child.locale,
             spellOut: child.spellOut,
-            children: _mapChildren(
-              child.children,
-              blockSpacer: blockSpacer,
-            ),
+            children: _mapChildren(child.children, blockSpacer: blockSpacer),
           )
         else
           child,
@@ -547,12 +543,12 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
                   final textStyle = _styleSheet.textStyles[node.localName]!;
                   final child = switch (node.attributes['type']) {
                     'checkbox' => Icon(
-                        (node.attributes['checked'] == 'true')
-                            ? Icons.check_box
-                            : Icons.check_box_outline_blank,
-                        size: textStyle.fontSize,
-                        color: textStyle.color,
-                      ),
+                      (node.attributes['checked'] == 'true')
+                          ? Icons.check_box
+                          : Icons.check_box_outline_blank,
+                      size: textStyle.fontSize,
+                      color: textStyle.color,
+                    ),
                     _ => null,
                   };
                   if (child == null) continue;
@@ -570,10 +566,10 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
                     level: level,
                     recognizer: switch (node.localName) {
                       'a' => _createGestureRecogniser(
-                          onTap: () => widget.onLinkTap?.call(
-                            node.attributes['href'] ?? '',
-                          ),
+                        onTap: () => widget.onLinkTap?.call(
+                          node.attributes['href'] ?? '',
                         ),
+                      ),
                       _ => recognizer,
                     },
                   );
@@ -639,12 +635,10 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
   }) sync* {
     final listStyle = _styleSheet.list;
     final items = nodes.whereType<html.Element>().toList();
-    final bulletStyle = textStyle.merge(
-      switch (type) {
-        MarkdownListType.ordered => listStyle.numberStyle,
-        MarkdownListType.unordered => listStyle.bulletStyle,
-      },
-    );
+    final bulletStyle = textStyle.merge(switch (type) {
+      MarkdownListType.ordered => listStyle.numberStyle,
+      MarkdownListType.unordered => listStyle.bulletStyle,
+    });
     final digitsCount = (start + items.length - 1).toString().length;
     final bulletConstraints = BoxConstraints(
       minWidth: (listStyle.shrinkWrap || type == MarkdownListType.unordered)
@@ -672,28 +666,28 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
             indent,
             switch (input) {
               null => Padding(
-                  padding: bulletPadding,
-                  child: ConstrainedBox(
-                    constraints: bulletConstraints,
-                    child: _buildRichTextWidget(
-                      text: switch (type) {
-                        MarkdownListType.ordered => '${start + i}.',
-                        MarkdownListType.unordered => listStyle.bullet,
-                      },
-                      style: bulletStyle,
-                      textAlign: TextAlign.right,
-                    ),
+                padding: bulletPadding,
+                child: ConstrainedBox(
+                  constraints: bulletConstraints,
+                  child: _buildRichTextWidget(
+                    text: switch (type) {
+                      MarkdownListType.ordered => '${start + i}.',
+                      MarkdownListType.unordered => listStyle.bullet,
+                    },
+                    style: bulletStyle,
+                    textAlign: TextAlign.right,
                   ),
                 ),
+              ),
               final input => _buildRichTextWidget(
-                  children: _buildRichTextTree(
-                    [input],
-                    level: level,
-                    blockSpacer: blockSpacer,
-                    style: bulletStyle,
-                    padding: bulletPadding,
-                  ).toList(),
-                ),
+                children: _buildRichTextTree(
+                  [input],
+                  level: level,
+                  blockSpacer: blockSpacer,
+                  style: bulletStyle,
+                  padding: bulletPadding,
+                ).toList(),
+              ),
             },
             Flexible(
               child: _buildRichTextWidget(
@@ -724,14 +718,10 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
     final tableStyle = _styleSheet.table;
     final tableRows = nodes
         .whereType<html.Element>()
-        .expand(
-          (e) => e.nodes
-              .whereType<html.Element>()
-              .where((e) => e.localName == 'tr'),
-        )
+        .expand((e) => e.children.where((e) => e.localName == 'tr'))
         .toList();
     if (tableRows.isEmpty) return const TextSpan();
-    final columnsCount = tableRows.first.nodes.whereType<html.Element>().length;
+    final columnsCount = tableRows.first.children.length;
     final columnWidths = List.generate(
       columnsCount,
       (i) => tableStyle.columnWidths?[i] ?? tableStyle.defaultColumnWidth,
@@ -804,10 +794,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
     );
   }
 
-  InlineSpan _buildCodeBlockSpan(
-    String text, {
-    required TextStyle textStyle,
-  }) {
+  InlineSpan _buildCodeBlockSpan(String text, {required TextStyle textStyle}) {
     final blockStyle = _styleSheet.codeblock;
     return WidgetSpan(
       alignment: PlaceholderAlignment.middle,
@@ -861,20 +848,16 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
       baseline: imageStyle.baseline,
       child: DefaultTextStyle.merge(
         style: textStyle,
-        child: widget.imageBuilder?.call(config) ??
-            buildImageWidget(
-              config,
-              imageDirectory: widget.imageDirectory,
-            ),
+        child:
+            widget.imageBuilder?.call(config) ??
+            buildImageWidget(config, imageDirectory: widget.imageDirectory),
       ),
     );
   }
 }
 
 class _ScrollControllerProvider extends StatefulWidget {
-  const _ScrollControllerProvider({
-    required this.builder,
-  });
+  const _ScrollControllerProvider({required this.builder});
 
   final Widget Function(BuildContext, ScrollController) builder;
 
