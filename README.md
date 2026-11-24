@@ -45,3 +45,18 @@ void main() {
   );
 }
 ```
+
+### Line breaks
+
+By default, single newlines in the Markdown text (soft line breaks) are collapsed into spaces, as in standard Markdown rendering. To start a new line, end the line with two spaces or a backslash, or use `<br>`.
+
+To keep every single newline as a line break, set `softLineBreak` to `true`:
+
+```dart
+MarkdownRichText(
+  MarkdownTextSpan(text: markdownString),
+  softLineBreak: true,
+)
+```
+
+> **Note:** Before 1.0.0, single newlines were always kept as line breaks. Set `softLineBreak: true` to keep that behaviour.
