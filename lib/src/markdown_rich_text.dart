@@ -1,7 +1,7 @@
 import 'package:flutter/gestures.dart' show TapGestureRecognizer;
 import 'package:flutter/material.dart';
 import 'package:html/dom.dart' as html;
-import 'package:html/parser.dart' show parseFragment;
+import 'package:html/parser.dart' as parser show parse;
 import 'package:markdown/markdown.dart'
     show Document, ExtensionSet, renderToHtml;
 
@@ -70,6 +70,7 @@ class MarkdownRichText extends StatefulWidget {
     this.onLinkTap,
     this.imageBuilder,
     this.imageDirectory,
+    this.softLineBreak = false,
     this.strutStyle,
     this.textAlign = TextAlign.left,
     this.textDirection,
@@ -107,6 +108,11 @@ class MarkdownRichText extends StatefulWidget {
 
   /// The base directory holding images referenced by Img tags with local or network file paths.
   final String? imageDirectory;
+
+  /// Whether to preserve single newline characters as line breaks in rendered text.
+  ///
+  /// If `true`, soft line breaks are kept as `\n`. If `false`, soft line breaks are collapsed into spaces.
+  final bool softLineBreak;
 
   /// Optional `StrutStyle` for text layout.
   final StrutStyle? strutStyle;
@@ -147,6 +153,7 @@ class MarkdownRichText extends StatefulWidget {
 
 class _MarkdownRichTextState extends State<MarkdownRichText> {
   final _gestureRecognisers = <TapGestureRecognizer>[];
+  List<InlineSpan>? _cachedSpans;
 
   late TextScaler _textScaler;
   late Document _document;
@@ -165,7 +172,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
       ),
       if (trailingSpaces != null) ' ' * trailingSpaces,
     ].join();
-    return parseFragment(input).nodes;
+    return parser.parse(input).nodes;
   }
 
   void _createDocument() {
@@ -178,12 +185,29 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
   }
 
   void _createStyleSheet() {
-    final fallbackStyleSheet = getFallbackStyleSheet(
+    _styleSheet = getFallbackStyleSheet(
       context: context,
       baseTheme: widget.styleSheetTheme,
-    );
-    _styleSheet = fallbackStyleSheet.merge(widget.styleSheet);
+    ).merge(widget.styleSheet);
   }
+
+  List<InlineSpan>? _rebuildSpans() {
+    final spacing = _styleSheet.blockSpacing / _scaleFactor;
+
+    while (_gestureRecognisers.isNotEmpty) {
+      _gestureRecognisers.removeAt(0).dispose();
+    }
+
+    return _mapChildren(
+      [widget.textSpan],
+      blockSpacer: TextSpan(
+        text: '\n',
+        style: TextStyle(fontSize: spacing, height: 1),
+      ),
+    );
+  }
+
+  void _invalidate() => _cachedSpans = null;
 
   @override
   void initState() {
@@ -196,15 +220,27 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
     super.didChangeDependencies();
     _textScaler = widget.textScaler ?? MediaQuery.textScalerOf(context);
     _createStyleSheet();
+    _invalidate();
   }
 
   @override
   void didUpdateWidget(covariant MarkdownRichText oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.settings != widget.settings) _createDocument();
+    if (oldWidget.settings != widget.settings) {
+      _createDocument();
+      _invalidate();
+    }
     if (oldWidget.styleSheet != widget.styleSheet ||
-        oldWidget.styleSheetTheme != widget.styleSheetTheme) {
+        oldWidget.styleSheetTheme != widget.styleSheetTheme ||
+        oldWidget.textScaler != widget.textScaler) {
       _createStyleSheet();
+      _invalidate();
+    }
+    if (oldWidget.textSpan != widget.textSpan ||
+        oldWidget.softLineBreak != widget.softLineBreak ||
+        oldWidget.textAlign != widget.textAlign ||
+        oldWidget.imageDirectory != widget.imageDirectory) {
+      _invalidate();
     }
   }
 
@@ -218,26 +254,14 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
 
   @override
   Widget build(BuildContext context) {
-    final spacing = _styleSheet.blockSpacing / _scaleFactor;
-    final blockSpacer = TextSpan(
-      text: '\n',
-      style: TextStyle(fontSize: spacing, height: 1),
-    );
-
-    for (final recogniser in _gestureRecognisers) {
-      recogniser.dispose();
-    }
-    _gestureRecognisers.clear();
+    _cachedSpans ??= _rebuildSpans();
 
     return _buildRichTextWidget(
       textScaler: _textScaler,
       style: _styleSheet.p,
       overflow: widget.overflow,
       maxLines: widget.maxLines,
-      children: _mapChildren(
-        [widget.textSpan],
-        blockSpacer: blockSpacer,
-      ),
+      children: _cachedSpans,
     );
   }
 
@@ -530,17 +554,25 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
           }
 
         case html.Text():
-          final recognizer = switch (onTap) {
-            null => null,
-            _ => TapGestureRecognizer()..onTap = onTap,
-          };
-          if (recognizer != null) _gestureRecognisers.add(recognizer);
-          yield TextSpan(
-            text: node.text,
-            style: style,
-            recognizer: recognizer,
-          );
-          if (node.text == '\n') yield blockSpacer;
+          if (node.text.isEmpty) continue;
+          if (node.text == '\n') {
+            yield TextSpan(text: '\n', style: style);
+            yield blockSpacer;
+          } else {
+            final text = node.text.replaceFirst(RegExp(r'^\n'), '');
+            final recognizer = switch (onTap) {
+              null => null,
+              _ => TapGestureRecognizer()..onTap = onTap,
+            };
+            if (recognizer != null) _gestureRecognisers.add(recognizer);
+            yield TextSpan(
+              text: widget.softLineBreak
+                  ? text
+                  : text.replaceAll(RegExp(r' ?\n *'), ' '),
+              style: style,
+              recognizer: recognizer,
+            );
+          }
       }
     }
   }
