@@ -1,5 +1,5 @@
 import 'package:flutter/gestures.dart' show TapGestureRecognizer;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:html/dom.dart' as html;
 import 'package:html/parser.dart' show parseFragment;
 import 'package:markdown/markdown.dart'
