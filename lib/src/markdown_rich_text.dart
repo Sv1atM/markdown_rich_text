@@ -162,6 +162,11 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
 
   double get _scaleFactor => _textScaler.scale(1);
 
+  static const _blockTags = {
+    'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', //
+    'blockquote', 'pre', 'table', 'thead', 'tbody', 'tr', 'hr', 'div',
+  };
+
   List<html.Node> _parseMarkdown(String text) {
     final leadingSpaces =
         _RegExps.leadingSpaces.firstMatch(text)?.group(0)?.length;
@@ -230,6 +235,13 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
       }
       return maxWidth;
     });
+  }
+
+  bool _isBlockSeparator(List<html.Node> nodes, int index) {
+    if (nodes[index] is! html.Text || nodes[index].text != '\n') return false;
+    final prev = (index > 0) ? nodes[index - 1] : null;
+    return prev == null ||
+        (prev is html.Element && _blockTags.contains(prev.localName));
   }
 
   void _disposeGestureRecognisers() {
@@ -596,8 +608,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
           }
 
         case html.Text():
-          if (node.text.isEmpty) continue;
-          if (node.text == '\n') {
+          if (_isBlockSeparator(nodes, i)) {
             yield TextSpan(text: '\n', style: style);
             yield blockSpacer;
           } else {
@@ -685,7 +696,11 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
             Flexible(
               child: _buildRichTextWidget(
                 children: _buildRichTextTree(
-                  element.nodes.where((e) => e.text != '\n').toList(),
+                  [
+                    for (var j = 0; j < element.nodes.length; j++)
+                      if (!_isBlockSeparator(element.nodes, j))
+                        element.nodes[j],
+                  ],
                   blockSpacer: blockSpacer,
                   level: level + 1,
                   style: textStyle,

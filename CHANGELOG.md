@@ -1,7 +1,7 @@
 ## 1.0.0
 
 * Migrated to `material_ui` and `cupertino_ui`.
-* Added support for `softLineBreak` switch.
+* Added support for `softLineBreak` switch. Is `false` by default. Set to `true` to get the previous behaviour.
 * Optimised parsing process.
 * Upgraded dependencies.
 * Added an `example` app.
