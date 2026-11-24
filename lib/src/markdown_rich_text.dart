@@ -1,7 +1,7 @@
 import 'package:flutter/gestures.dart' show TapGestureRecognizer;
 import 'package:flutter/material.dart';
 import 'package:html/dom.dart' as html;
-import 'package:html/parser.dart' as parser show parse;
+import 'package:html/parser.dart' show parseFragment;
 import 'package:markdown/markdown.dart'
     show Document, ExtensionSet, renderToHtml;
 
@@ -153,6 +153,7 @@ class MarkdownRichText extends StatefulWidget {
 
 class _MarkdownRichTextState extends State<MarkdownRichText> {
   final _gestureRecognisers = <TapGestureRecognizer>[];
+  final _bulletWidthCache = <(TextStyle, int), double>{};
   List<InlineSpan>? _cachedSpans;
 
   late TextScaler _textScaler;
@@ -162,8 +163,10 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
   double get _scaleFactor => _textScaler.scale(1);
 
   List<html.Node> _parseMarkdown(String text) {
-    final leadingSpaces = RegExp(r'^ +').firstMatch(text)?.group(0)?.length;
-    final trailingSpaces = RegExp(r' +$').firstMatch(text)?.group(0)?.length;
+    final leadingSpaces =
+        _RegExps.leadingSpaces.firstMatch(text)?.group(0)?.length;
+    final trailingSpaces =
+        _RegExps.trailingSpaces.firstMatch(text)?.group(0)?.length;
     final input = [
       if (leadingSpaces != null) ' ' * leadingSpaces,
       renderToHtml(
@@ -172,7 +175,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
       ),
       if (trailingSpaces != null) ' ' * trailingSpaces,
     ].join();
-    return parser.parse(input).nodes;
+    return parseFragment(input).nodes;
   }
 
   void _createDocument() {
@@ -185,6 +188,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
   }
 
   void _createStyleSheet() {
+    _bulletWidthCache.clear();
     _styleSheet = getFallbackStyleSheet(
       context: context,
       baseTheme: widget.styleSheetTheme,
@@ -194,9 +198,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
   List<InlineSpan>? _rebuildSpans() {
     final spacing = _styleSheet.blockSpacing / _scaleFactor;
 
-    while (_gestureRecognisers.isNotEmpty) {
-      _gestureRecognisers.removeAt(0).dispose();
-    }
+    _disposeGestureRecognisers();
 
     return _mapChildren(
       [widget.textSpan],
@@ -208,6 +210,34 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
   }
 
   void _invalidate() => _cachedSpans = null;
+
+  TapGestureRecognizer _createGestureRecogniser({required VoidCallback onTap}) {
+    final recogniser = TapGestureRecognizer()..onTap = onTap;
+    _gestureRecognisers.add(recogniser);
+    return recogniser;
+  }
+
+  double _measureBulletWidth(TextStyle style, int digitsCount) {
+    return _bulletWidthCache.putIfAbsent((style, digitsCount), () {
+      var maxWidth = 0.0;
+      for (var i = 0; i < 10; i++) {
+        final painter = TextPainter(
+          text: TextSpan(text: '${'$i' * digitsCount}.', style: style),
+          textDirection: TextDirection.ltr,
+        )..layout();
+        if (painter.width > maxWidth) maxWidth = painter.width;
+        painter.dispose();
+      }
+      return maxWidth;
+    });
+  }
+
+  void _disposeGestureRecognisers() {
+    for (final recogniser in _gestureRecognisers) {
+      recogniser.dispose();
+    }
+    _gestureRecognisers.clear();
+  }
 
   @override
   void initState() {
@@ -233,22 +263,29 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
     if (oldWidget.styleSheet != widget.styleSheet ||
         oldWidget.styleSheetTheme != widget.styleSheetTheme ||
         oldWidget.textScaler != widget.textScaler) {
+      _textScaler = widget.textScaler ?? MediaQuery.textScalerOf(context);
       _createStyleSheet();
       _invalidate();
     }
     if (oldWidget.textSpan != widget.textSpan ||
         oldWidget.softLineBreak != widget.softLineBreak ||
+        oldWidget.imageBuilder != widget.imageBuilder ||
+        oldWidget.imageDirectory != widget.imageDirectory ||
+        oldWidget.strutStyle != widget.strutStyle ||
         oldWidget.textAlign != widget.textAlign ||
-        oldWidget.imageDirectory != widget.imageDirectory) {
+        oldWidget.textDirection != widget.textDirection ||
+        oldWidget.semanticsLabel != widget.semanticsLabel ||
+        oldWidget.semanticsIdentifier != widget.semanticsIdentifier ||
+        oldWidget.textWidthBasis != widget.textWidthBasis ||
+        oldWidget.textHeightBehavior != widget.textHeightBehavior ||
+        oldWidget.selectionColor != widget.selectionColor) {
       _invalidate();
     }
   }
 
   @override
   void dispose() {
-    for (final recogniser in _gestureRecognisers) {
-      recogniser.dispose();
-    }
+    _disposeGestureRecognisers();
     super.dispose();
   }
 
@@ -299,8 +336,10 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
     required TextStyle headStyle,
     required TextStyle bodyStyle,
   }) {
-    final rows = nodes.whereType<html.Element>();
-    final cells = rows.map((row) => row.nodes.whereType<html.Element>());
+    final rows = nodes.whereType<html.Element>().toList();
+    final cells = rows
+        .map((row) => row.nodes.whereType<html.Element>().toList())
+        .toList();
     final cellPadding = tableStyle.cellsPadding / _scaleFactor;
     final headDecoration = tableStyle.headDecoration?.scale(_scaleFactor);
     final bodyDecoration = tableStyle.decoration?.scale(_scaleFactor);
@@ -318,7 +357,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
               _ => i.isEven ? bodyDecoration : fallbackDecoration,
             },
             children: List.generate(columnsCount, (j) {
-              final element = cells.elementAt(i).elementAtOrNull(j);
+              final element = cells[i].elementAtOrNull(j);
               if (element == null) return const SizedBox.shrink();
               final textAlign = switch (element.attributes['align']) {
                 'left' => TextAlign.left,
@@ -420,7 +459,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
     required InlineSpan blockSpacer,
     TextStyle? style,
     int level = 0,
-    VoidCallback? onTap,
+    TapGestureRecognizer? recognizer,
     EdgeInsets padding = EdgeInsets.zero,
   }) sync* {
     for (final node in nodes) {
@@ -516,10 +555,12 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
                     blockSpacer: blockSpacer,
                     style: style?.merge(textStyle) ?? textStyle,
                     level: level,
-                    onTap: switch (node.localName) {
-                      'a' => () => widget.onLinkTap?.call(
+                    recognizer: switch (node.localName) {
+                      'a' => _createGestureRecogniser(
+                          onTap: () => widget.onLinkTap?.call(
                             node.attributes['href'] as String,
                           ),
+                        ),
                       _ => null,
                     },
                   );
@@ -543,7 +584,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
                     blockSpacer: blockSpacer,
                     style: style,
                     level: nestLevel ?? level,
-                    onTap: onTap,
+                    recognizer: recognizer,
                   ).toList();
                 },
               );
@@ -559,16 +600,12 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
             yield TextSpan(text: '\n', style: style);
             yield blockSpacer;
           } else {
-            final text = node.text.replaceFirst(RegExp(r'^\n'), '');
-            final recognizer = switch (onTap) {
-              null => null,
-              _ => TapGestureRecognizer()..onTap = onTap,
-            };
-            if (recognizer != null) _gestureRecognisers.add(recognizer);
+            final text =
+                node.text.startsWith('\n') ? node.text.substring(1) : node.text;
             yield TextSpan(
               text: widget.softLineBreak
                   ? text
-                  : text.replaceAll(RegExp(r' ?\n *'), ' '),
+                  : text.replaceAll(_RegExps.softLineBreak, ' '),
               style: style,
               recognizer: recognizer,
             );
@@ -586,7 +623,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
     int start = 1,
   }) sync* {
     final listStyle = _styleSheet.list;
-    final items = nodes.whereType<html.Element>();
+    final items = nodes.whereType<html.Element>().toList();
     final bulletStyle = textStyle.merge(
       switch (type) {
         MarkdownListType.ordered => listStyle.numberStyle,
@@ -597,13 +634,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
     final bulletConstraints = BoxConstraints(
       minWidth: (listStyle.shrinkWrap || type == MarkdownListType.unordered)
           ? 0
-          : List.generate(10, (i) {
-              final text = i.toString() * digitsCount + '.';
-              return TextPainter(
-                text: TextSpan(text: text, style: bulletStyle),
-                textDirection: TextDirection.ltr,
-              )..layout();
-            }).reduce((a, b) => a.width > b.width ? a : b).width,
+          : _measureBulletWidth(bulletStyle, digitsCount),
     );
     final bulletPadding = switch (type) {
       MarkdownListType.unordered => listStyle.bulletPadding / _scaleFactor,
@@ -611,7 +642,8 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
     };
     final indent = SizedBox(width: listStyle.indent / _scaleFactor);
     for (var i = 0; i < items.length; i++) {
-      final element = items.elementAt(i);
+      final element = items[i];
+      final input = element.querySelector('input');
       if (i > 0 || level > 0) yield blockSpacer;
       yield WidgetSpan(
         alignment: PlaceholderAlignment.middle,
@@ -621,7 +653,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
           textBaseline: textStyle.textBaseline ?? TextBaseline.alphabetic,
           children: [
             indent,
-            switch (element.querySelector('input')) {
+            switch (input) {
               null => Padding(
                   padding: bulletPadding,
                   child: ConstrainedBox(
@@ -638,7 +670,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
                 ),
               final input => _buildRichTextWidget(
                   children: _buildRichTextTree(
-                    [input.remove()],
+                    [input],
                     level: level,
                     blockSpacer: blockSpacer,
                     style: bulletStyle,
@@ -649,7 +681,9 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
             Flexible(
               child: _buildRichTextWidget(
                 children: _buildRichTextTree(
-                  element.nodes.where((e) => e.text != '\n').toList(),
+                  element.nodes
+                      .where((e) => e != input && e.text != '\n')
+                      .toList(),
                   blockSpacer: blockSpacer,
                   level: level + 1,
                   style: textStyle,
@@ -719,13 +753,15 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
     required TextStyle textStyle,
   }) {
     final blockStyle = _styleSheet.blockquote;
-    while (nodes.firstOrNull?.text == '\n') {
-      nodes.removeAt(0);
+    var start = 0;
+    var end = nodes.length;
+    while (start < end && nodes[start].text == '\n') {
+      start++;
     }
-    while (nodes.lastOrNull?.text == '\n') {
-      nodes.removeLast();
+    while (end > start && nodes[end - 1].text == '\n') {
+      end--;
     }
-    if (nodes.isEmpty) return const TextSpan();
+    if (start == end) return const TextSpan();
     return WidgetSpan(
       alignment: PlaceholderAlignment.middle,
       child: Container(
@@ -740,7 +776,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
         child: _buildRichTextWidget(
           style: textStyle,
           children: _buildRichTextTree(
-            nodes,
+            nodes.sublist(start, end),
             blockSpacer: blockSpacer,
           ).toList(),
         ),
@@ -771,7 +807,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
               scrollDirection: Axis.horizontal,
               padding: blockStyle.padding / _scaleFactor,
               child: _buildRichTextWidget(
-                text: (text.characters.lastOrNull == '\n')
+                text: text.endsWith('\n')
                     ? text.substring(0, text.length - 1)
                     : text,
                 style: textStyle,
@@ -838,6 +874,12 @@ class _ScrollControllerProviderState extends State<_ScrollControllerProvider> {
     _controller.dispose();
     super.dispose();
   }
+}
+
+sealed class _RegExps {
+  static final leadingSpaces = RegExp(r'^ +');
+  static final trailingSpaces = RegExp(r' +$');
+  static final softLineBreak = RegExp(r' ?\n *');
 }
 
 extension _DecorationScaling on Decoration {
