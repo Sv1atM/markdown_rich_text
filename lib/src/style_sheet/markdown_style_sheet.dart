@@ -1,7 +1,7 @@
-import 'package:flutter/cupertino.dart'
+import 'package:cupertino_ui/cupertino_ui.dart'
     show CupertinoColors, CupertinoThemeData;
 import 'package:flutter/foundation.dart' show mapEquals;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:html/dom.dart' as html show Element, Node;
 
 part 'markdown_blockquote_style.dart';

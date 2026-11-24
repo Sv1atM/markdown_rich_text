@@ -1,27 +1,36 @@
+## 1.0.0
+
+* Migrated to `material_ui` and `cupertino_ui`.
+* Bump minimal Dart and Flutter versions.
+* Added support for `softLineBreak` switch. Is `false` by default. Set to `true` to get the previous behaviour.
+* Optimised parsing process.
+* Upgraded dependencies.
+* Added an `example` app.
+
 ## 0.2.2
 
-* Fix bug with extra spacing in unordered lists.
+* Fixed bug with extra spacing in unordered lists.
 
 ## 0.2.1
 
-* Add a fallback `TextBaseline` for lists when it's missing in a `TextStyle`.
+* Added a fallback `TextBaseline` for lists when it's missing in a `TextStyle`.
 
 ## 0.2.0
 
-* Add `MarkdownStyleSheet.buildersExtension` for custom `InlineSpan` builders.
-* Add support for checkboxes in lists (ordered and unordered).
-* Refine styling, update some default values.
-* Add `MarkdownTableStyle.headVerticalAlignment` and `applyToAll` properties.
-* Add `MarkdownBlockquoteStyle.shrinkWrap` property.
-* Add `MarkdownCodeBlockStyle.shrinkWrap` property.
-* Disable dimensions scaling (paddings, spacings, borders).
-* Refine existing builders.
-* Update documentation.
+* Added `MarkdownStyleSheet.buildersExtension` for custom `InlineSpan` builders.
+* Added support for checkboxes in lists (ordered and unordered).
+* Refined styling, update some default values.
+* Added `MarkdownTableStyle.headVerticalAlignment` and `applyToAll` properties.
+* Added `MarkdownBlockquoteStyle.shrinkWrap` property.
+* Added `MarkdownCodeBlockStyle.shrinkWrap` property.
+* Disabled dimensions scaling (paddings, spacings, borders).
+* Refined existing builders.
+* Updated documentation.
 
 ## 0.1.4
 
-* Tweak ordered list layout algorithm.
-* Add `MarkdownListStyle.shrinkWrap` property.
+* Tweaked ordered list layout algorithm.
+* Added `MarkdownListStyle.shrinkWrap` property.
 
 ## 0.1.3
 
@@ -37,7 +46,7 @@
 * Added tables support.
 * Made a code block scrollable.
 * Changed images span default alignment.
-* Fix whitespaces trimming in Markdown texts.
+* Fixed whitespaces trimming in Markdown texts.
 
 ## 0.1.0
 

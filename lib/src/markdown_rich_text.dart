@@ -1,5 +1,5 @@
 import 'package:flutter/gestures.dart' show TapGestureRecognizer;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:html/dom.dart' as html;
 import 'package:html/parser.dart' show parseFragment;
 import 'package:markdown/markdown.dart'
@@ -70,6 +70,7 @@ class MarkdownRichText extends StatefulWidget {
     this.onLinkTap,
     this.imageBuilder,
     this.imageDirectory,
+    this.softLineBreak = false,
     this.strutStyle,
     this.textAlign = TextAlign.left,
     this.textDirection,
@@ -107,6 +108,11 @@ class MarkdownRichText extends StatefulWidget {
 
   /// The base directory holding images referenced by Img tags with local or network file paths.
   final String? imageDirectory;
+
+  /// Whether to preserve single newline characters as line breaks in rendered text.
+  ///
+  /// If `true`, soft line breaks are kept as `\n`. If `false`, soft line breaks are collapsed into spaces.
+  final bool softLineBreak;
 
   /// Optional `StrutStyle` for text layout.
   final StrutStyle? strutStyle;
@@ -147,6 +153,8 @@ class MarkdownRichText extends StatefulWidget {
 
 class _MarkdownRichTextState extends State<MarkdownRichText> {
   final _gestureRecognisers = <TapGestureRecognizer>[];
+  final _bulletWidthCache = <(TextStyle, int), double>{};
+  List<InlineSpan>? _cachedSpans;
 
   late TextScaler _textScaler;
   late Document _document;
@@ -154,9 +162,20 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
 
   double get _scaleFactor => _textScaler.scale(1);
 
+  static const _blockTags = {
+    'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', //
+    'blockquote', 'pre', 'table', 'thead', 'tbody', 'tr', 'hr', 'div',
+  };
+
   List<html.Node> _parseMarkdown(String text) {
-    final leadingSpaces = RegExp(r'^ +').firstMatch(text)?.group(0)?.length;
-    final trailingSpaces = RegExp(r' +$').firstMatch(text)?.group(0)?.length;
+    final leadingSpaces = _RegExps.leadingSpaces
+        .firstMatch(text)
+        ?.group(0)
+        ?.length;
+    final trailingSpaces = _RegExps.trailingSpaces
+        .firstMatch(text)
+        ?.group(0)
+        ?.length;
     final input = [
       if (leadingSpaces != null) ' ' * leadingSpaces,
       renderToHtml(
@@ -178,11 +197,62 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
   }
 
   void _createStyleSheet() {
-    final fallbackStyleSheet = getFallbackStyleSheet(
+    _bulletWidthCache.clear();
+    _styleSheet = getFallbackStyleSheet(
       context: context,
       baseTheme: widget.styleSheetTheme,
+    ).merge(widget.styleSheet);
+  }
+
+  List<InlineSpan>? _rebuildSpans() {
+    final spacing = _styleSheet.blockSpacing / _scaleFactor;
+
+    _disposeGestureRecognisers();
+
+    return _mapChildren(
+      [widget.textSpan],
+      blockSpacer: TextSpan(
+        text: '\n',
+        style: TextStyle(fontSize: spacing, height: 1),
+      ),
     );
-    _styleSheet = fallbackStyleSheet.merge(widget.styleSheet);
+  }
+
+  void _invalidate() => _cachedSpans = null;
+
+  TapGestureRecognizer _createGestureRecogniser({required VoidCallback onTap}) {
+    final recogniser = TapGestureRecognizer()..onTap = onTap;
+    _gestureRecognisers.add(recogniser);
+    return recogniser;
+  }
+
+  double _measureBulletWidth(TextStyle style, int digitsCount) {
+    return _bulletWidthCache.putIfAbsent((style, digitsCount), () {
+      var maxWidth = 0.0;
+      for (var i = 0; i < 10; i++) {
+        final painter = TextPainter(
+          text: TextSpan(text: '${'$i' * digitsCount}.', style: style),
+          textDirection: TextDirection.ltr,
+        )..layout();
+        if (painter.width > maxWidth) maxWidth = painter.width;
+        painter.dispose();
+      }
+      return maxWidth;
+    });
+  }
+
+  bool _isBlockSeparator(List<html.Node> nodes, int index) {
+    if (nodes[index] is! html.Text || nodes[index].text != '\n') return false;
+    final prev = (index > 0) ? nodes[index - 1] : null;
+    return prev == null ||
+        (prev is html.Element && _blockTags.contains(prev.localName));
+  }
+
+  void _disposeGestureRecognisers() {
+    for (final recogniser in _gestureRecognisers) {
+      recogniser.dispose();
+    }
+    _gestureRecognisers.clear();
   }
 
   @override
@@ -196,48 +266,55 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
     super.didChangeDependencies();
     _textScaler = widget.textScaler ?? MediaQuery.textScalerOf(context);
     _createStyleSheet();
+    _invalidate();
   }
 
   @override
   void didUpdateWidget(covariant MarkdownRichText oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.settings != widget.settings) _createDocument();
+    if (oldWidget.settings != widget.settings) {
+      _createDocument();
+      _invalidate();
+    }
     if (oldWidget.styleSheet != widget.styleSheet ||
-        oldWidget.styleSheetTheme != widget.styleSheetTheme) {
+        oldWidget.styleSheetTheme != widget.styleSheetTheme ||
+        oldWidget.textScaler != widget.textScaler) {
+      _textScaler = widget.textScaler ?? MediaQuery.textScalerOf(context);
       _createStyleSheet();
+      _invalidate();
+    }
+    if (oldWidget.textSpan != widget.textSpan ||
+        oldWidget.softLineBreak != widget.softLineBreak ||
+        oldWidget.imageBuilder != widget.imageBuilder ||
+        oldWidget.imageDirectory != widget.imageDirectory ||
+        oldWidget.strutStyle != widget.strutStyle ||
+        oldWidget.textAlign != widget.textAlign ||
+        oldWidget.textDirection != widget.textDirection ||
+        oldWidget.semanticsLabel != widget.semanticsLabel ||
+        oldWidget.semanticsIdentifier != widget.semanticsIdentifier ||
+        oldWidget.textWidthBasis != widget.textWidthBasis ||
+        oldWidget.textHeightBehavior != widget.textHeightBehavior ||
+        oldWidget.selectionColor != widget.selectionColor) {
+      _invalidate();
     }
   }
 
   @override
   void dispose() {
-    for (final recogniser in _gestureRecognisers) {
-      recogniser.dispose();
-    }
+    _disposeGestureRecognisers();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final spacing = _styleSheet.blockSpacing / _scaleFactor;
-    final blockSpacer = TextSpan(
-      text: '\n',
-      style: TextStyle(fontSize: spacing, height: 1),
-    );
-
-    for (final recogniser in _gestureRecognisers) {
-      recogniser.dispose();
-    }
-    _gestureRecognisers.clear();
+    _cachedSpans ??= _rebuildSpans();
 
     return _buildRichTextWidget(
       textScaler: _textScaler,
       style: _styleSheet.p,
       overflow: widget.overflow,
       maxLines: widget.maxLines,
-      children: _mapChildren(
-        [widget.textSpan],
-        blockSpacer: blockSpacer,
-      ),
+      children: _cachedSpans,
     );
   }
 
@@ -275,8 +352,10 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
     required TextStyle headStyle,
     required TextStyle bodyStyle,
   }) {
-    final rows = nodes.whereType<html.Element>();
-    final cells = rows.map((row) => row.nodes.whereType<html.Element>());
+    final rows = nodes.whereType<html.Element>().toList();
+    final cells = rows
+        .map((row) => row.nodes.whereType<html.Element>().toList())
+        .toList();
     final cellPadding = tableStyle.cellsPadding / _scaleFactor;
     final headDecoration = tableStyle.headDecoration?.scale(_scaleFactor);
     final bodyDecoration = tableStyle.decoration?.scale(_scaleFactor);
@@ -294,7 +373,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
               _ => i.isEven ? bodyDecoration : fallbackDecoration,
             },
             children: List.generate(columnsCount, (j) {
-              final element = cells.elementAt(i).elementAtOrNull(j);
+              final element = cells[i].elementAtOrNull(j);
               if (element == null) return const SizedBox.shrink();
               final textAlign = switch (element.attributes['align']) {
                 'left' => TextAlign.left,
@@ -360,10 +439,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
                 _parseMarkdown(child.text!),
                 blockSpacer: blockSpacer,
               ),
-              ...?_mapChildren(
-                child.children,
-                blockSpacer: blockSpacer,
-              ),
+              ...?_mapChildren(child.children, blockSpacer: blockSpacer),
             ],
           )
         else if (child is SpacerTextSpan) ...[
@@ -381,10 +457,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
             semanticsIdentifier: child.semanticsIdentifier,
             locale: child.locale,
             spellOut: child.spellOut,
-            children: _mapChildren(
-              child.children,
-              blockSpacer: blockSpacer,
-            ),
+            children: _mapChildren(child.children, blockSpacer: blockSpacer),
           )
         else
           child,
@@ -396,10 +469,10 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
     required InlineSpan blockSpacer,
     TextStyle? style,
     int level = 0,
-    VoidCallback? onTap,
+    TapGestureRecognizer? recognizer,
     EdgeInsets padding = EdgeInsets.zero,
   }) sync* {
-    for (final node in nodes) {
+    for (final (i, node) in nodes.indexed) {
       switch (node) {
         case html.Element():
           switch (_styleSheet.buildersExtension[node.localName]) {
@@ -409,6 +482,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
                   yield const TextSpan(text: '\n');
 
                 case 'ol' || 'ul':
+                  final start = node.attributes['start'] ?? '';
                   yield* _buildListSpans(
                     node.nodes,
                     blockSpacer: blockSpacer,
@@ -418,7 +492,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
                       _ => MarkdownListType.unordered,
                     },
                     level: level,
-                    start: int.parse(node.attributes['start'] ?? '1'),
+                    start: int.tryParse(start) ?? 1,
                   );
 
                 case 'table':
@@ -471,12 +545,12 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
                   final textStyle = _styleSheet.textStyles[node.localName]!;
                   final child = switch (node.attributes['type']) {
                     'checkbox' => Icon(
-                        (node.attributes['checked'] == 'true')
-                            ? Icons.check_box
-                            : Icons.check_box_outline_blank,
-                        size: textStyle.fontSize,
-                        color: textStyle.color,
-                      ),
+                      (node.attributes['checked'] == 'true')
+                          ? Icons.check_box
+                          : Icons.check_box_outline_blank,
+                      size: textStyle.fontSize,
+                      color: textStyle.color,
+                    ),
                     _ => null,
                   };
                   if (child == null) continue;
@@ -492,11 +566,13 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
                     blockSpacer: blockSpacer,
                     style: style?.merge(textStyle) ?? textStyle,
                     level: level,
-                    onTap: switch (node.localName) {
-                      'a' => () => widget.onLinkTap?.call(
-                            node.attributes['href'] as String,
-                          ),
-                      _ => null,
+                    recognizer: switch (node.localName) {
+                      'a' => _createGestureRecogniser(
+                        onTap: () => widget.onLinkTap?.call(
+                          node.attributes['href'] ?? '',
+                        ),
+                      ),
+                      _ => recognizer,
                     },
                   );
               }
@@ -519,7 +595,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
                     blockSpacer: blockSpacer,
                     style: style,
                     level: nestLevel ?? level,
-                    onTap: onTap,
+                    recognizer: recognizer,
                   ).toList();
                 },
               );
@@ -530,17 +606,23 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
           }
 
         case html.Text():
-          final recognizer = switch (onTap) {
-            null => null,
-            _ => TapGestureRecognizer()..onTap = onTap,
-          };
-          if (recognizer != null) _gestureRecognisers.add(recognizer);
-          yield TextSpan(
-            text: node.text,
-            style: style,
-            recognizer: recognizer,
-          );
-          if (node.text == '\n') yield blockSpacer;
+          if (_isBlockSeparator(nodes, i)) {
+            yield TextSpan(text: '\n', style: style);
+            yield blockSpacer;
+          } else {
+            final prev = (i > 0) ? nodes[i - 1] : null;
+            final afterBreak = prev is html.Element && prev.localName == 'br';
+            final text = (afterBreak && node.text.startsWith('\n'))
+                ? node.text.substring(1)
+                : node.text;
+            yield TextSpan(
+              text: widget.softLineBreak
+                  ? text
+                  : text.replaceAll(_RegExps.softLineBreak, ' '),
+              style: style,
+              recognizer: recognizer,
+            );
+          }
       }
     }
   }
@@ -554,24 +636,16 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
     int start = 1,
   }) sync* {
     final listStyle = _styleSheet.list;
-    final items = nodes.whereType<html.Element>();
-    final bulletStyle = textStyle.merge(
-      switch (type) {
-        MarkdownListType.ordered => listStyle.numberStyle,
-        MarkdownListType.unordered => listStyle.bulletStyle,
-      },
-    );
+    final items = nodes.whereType<html.Element>().toList();
+    final bulletStyle = textStyle.merge(switch (type) {
+      MarkdownListType.ordered => listStyle.numberStyle,
+      MarkdownListType.unordered => listStyle.bulletStyle,
+    });
     final digitsCount = (start + items.length - 1).toString().length;
     final bulletConstraints = BoxConstraints(
       minWidth: (listStyle.shrinkWrap || type == MarkdownListType.unordered)
           ? 0
-          : List.generate(10, (i) {
-              final text = i.toString() * digitsCount + '.';
-              return TextPainter(
-                text: TextSpan(text: text, style: bulletStyle),
-                textDirection: TextDirection.ltr,
-              )..layout();
-            }).reduce((a, b) => a.width > b.width ? a : b).width,
+          : _measureBulletWidth(bulletStyle, digitsCount),
     );
     final bulletPadding = switch (type) {
       MarkdownListType.unordered => listStyle.bulletPadding / _scaleFactor,
@@ -579,7 +653,10 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
     };
     final indent = SizedBox(width: listStyle.indent / _scaleFactor);
     for (var i = 0; i < items.length; i++) {
-      final element = items.elementAt(i);
+      final element = items[i];
+      final input = element.classes.contains('task-list-item')
+          ? (element.querySelector('input')?..remove())
+          : null;
       if (i > 0 || level > 0) yield blockSpacer;
       yield WidgetSpan(
         alignment: PlaceholderAlignment.middle,
@@ -589,35 +666,39 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
           textBaseline: textStyle.textBaseline ?? TextBaseline.alphabetic,
           children: [
             indent,
-            switch (element.querySelector('input')) {
+            switch (input) {
               null => Padding(
-                  padding: bulletPadding,
-                  child: ConstrainedBox(
-                    constraints: bulletConstraints,
-                    child: _buildRichTextWidget(
-                      text: switch (type) {
-                        MarkdownListType.ordered => '${start + i}.',
-                        MarkdownListType.unordered => listStyle.bullet,
-                      },
-                      style: bulletStyle,
-                      textAlign: TextAlign.right,
-                    ),
+                padding: bulletPadding,
+                child: ConstrainedBox(
+                  constraints: bulletConstraints,
+                  child: _buildRichTextWidget(
+                    text: switch (type) {
+                      MarkdownListType.ordered => '${start + i}.',
+                      MarkdownListType.unordered => listStyle.bullet,
+                    },
+                    style: bulletStyle,
+                    textAlign: TextAlign.right,
                   ),
                 ),
+              ),
               final input => _buildRichTextWidget(
-                  children: _buildRichTextTree(
-                    [input.remove()],
-                    level: level,
-                    blockSpacer: blockSpacer,
-                    style: bulletStyle,
-                    padding: bulletPadding,
-                  ).toList(),
-                ),
+                children: _buildRichTextTree(
+                  [input],
+                  level: level,
+                  blockSpacer: blockSpacer,
+                  style: bulletStyle,
+                  padding: bulletPadding,
+                ).toList(),
+              ),
             },
             Flexible(
               child: _buildRichTextWidget(
                 children: _buildRichTextTree(
-                  element.nodes.where((e) => e.text != '\n').toList(),
+                  [
+                    for (var j = 0; j < element.nodes.length; j++)
+                      if (!_isBlockSeparator(element.nodes, j))
+                        element.nodes[j],
+                  ],
                   blockSpacer: blockSpacer,
                   level: level + 1,
                   style: textStyle,
@@ -640,11 +721,12 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
     final tableRows = nodes
         .whereType<html.Element>()
         .expand(
-          (e) => e.nodes
-              .whereType<html.Element>()
-              .where((e) => e.localName == 'tr'),
+          (e) => e.nodes.whereType<html.Element>().where(
+            (e) => e.localName == 'tr',
+          ),
         )
         .toList();
+    if (tableRows.isEmpty) return const TextSpan();
     final columnsCount = tableRows.first.nodes.whereType<html.Element>().length;
     final columnWidths = List.generate(
       columnsCount,
@@ -687,13 +769,15 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
     required TextStyle textStyle,
   }) {
     final blockStyle = _styleSheet.blockquote;
-    while (nodes.firstOrNull?.text == '\n') {
-      nodes.removeAt(0);
+    var start = 0;
+    var end = nodes.length;
+    while (start < end && nodes[start].text == '\n') {
+      start++;
     }
-    while (nodes.lastOrNull?.text == '\n') {
-      nodes.removeLast();
+    while (end > start && nodes[end - 1].text == '\n') {
+      end--;
     }
-    if (nodes.isEmpty) return const TextSpan();
+    if (start == end) return const TextSpan();
     return WidgetSpan(
       alignment: PlaceholderAlignment.middle,
       child: Container(
@@ -708,7 +792,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
         child: _buildRichTextWidget(
           style: textStyle,
           children: _buildRichTextTree(
-            nodes,
+            nodes.sublist(start, end),
             blockSpacer: blockSpacer,
           ).toList(),
         ),
@@ -716,10 +800,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
     );
   }
 
-  InlineSpan _buildCodeBlockSpan(
-    String text, {
-    required TextStyle textStyle,
-  }) {
+  InlineSpan _buildCodeBlockSpan(String text, {required TextStyle textStyle}) {
     final blockStyle = _styleSheet.codeblock;
     return WidgetSpan(
       alignment: PlaceholderAlignment.middle,
@@ -739,7 +820,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
               scrollDirection: Axis.horizontal,
               padding: blockStyle.padding / _scaleFactor,
               child: _buildRichTextWidget(
-                text: (text.characters.lastOrNull == '\n')
+                text: text.endsWith('\n')
                     ? text.substring(0, text.length - 1)
                     : text,
                 style: textStyle,
@@ -773,20 +854,16 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
       baseline: imageStyle.baseline,
       child: DefaultTextStyle.merge(
         style: textStyle,
-        child: widget.imageBuilder?.call(config) ??
-            buildImageWidget(
-              config,
-              imageDirectory: widget.imageDirectory,
-            ),
+        child:
+            widget.imageBuilder?.call(config) ??
+            buildImageWidget(config, imageDirectory: widget.imageDirectory),
       ),
     );
   }
 }
 
 class _ScrollControllerProvider extends StatefulWidget {
-  const _ScrollControllerProvider({
-    required this.builder,
-  });
+  const _ScrollControllerProvider({required this.builder});
 
   final Widget Function(BuildContext, ScrollController) builder;
 
@@ -806,6 +883,12 @@ class _ScrollControllerProviderState extends State<_ScrollControllerProvider> {
     _controller.dispose();
     super.dispose();
   }
+}
+
+sealed class _RegExps {
+  static final leadingSpaces = RegExp(r'^ +');
+  static final trailingSpaces = RegExp(r' +$');
+  static final softLineBreak = RegExp(r' ?\n *');
 }
 
 extension _DecorationScaling on Decoration {

@@ -1,7 +1,7 @@
 import 'dart:js_interop' show JS, JSString, JSStringToString;
 
-import 'package:flutter/cupertino.dart' show CupertinoTheme;
-import 'package:flutter/material.dart';
+import 'package:cupertino_ui/cupertino_ui.dart' show CupertinoTheme;
+import 'package:material_ui/material_ui.dart';
 import 'package:path/path.dart' as path;
 
 import 'markdown_rich_text.dart' show MarkdownStyleSheetBaseTheme;
