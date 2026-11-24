@@ -574,7 +574,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
                             node.attributes['href'] ?? '',
                           ),
                         ),
-                      _ => null,
+                      _ => recognizer,
                     },
                   );
               }
@@ -658,7 +658,9 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
     final indent = SizedBox(width: listStyle.indent / _scaleFactor);
     for (var i = 0; i < items.length; i++) {
       final element = items[i];
-      final input = element.querySelector('input')?..remove();
+      final input = element.classes.contains('task-list-item')
+          ? (element.querySelector('input')?..remove())
+          : null;
       if (i > 0 || level > 0) yield blockSpacer;
       yield WidgetSpan(
         alignment: PlaceholderAlignment.middle,
