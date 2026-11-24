@@ -353,7 +353,9 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
     required TextStyle bodyStyle,
   }) {
     final rows = nodes.whereType<html.Element>().toList();
-    final cells = rows.map((row) => row.children).toList();
+    final cells = rows
+        .map((row) => row.nodes.whereType<html.Element>().toList())
+        .toList();
     final cellPadding = tableStyle.cellsPadding / _scaleFactor;
     final headDecoration = tableStyle.headDecoration?.scale(_scaleFactor);
     final bodyDecoration = tableStyle.decoration?.scale(_scaleFactor);
@@ -718,10 +720,14 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
     final tableStyle = _styleSheet.table;
     final tableRows = nodes
         .whereType<html.Element>()
-        .expand((e) => e.children.where((e) => e.localName == 'tr'))
+        .expand(
+          (e) => e.nodes.whereType<html.Element>().where(
+            (e) => e.localName == 'tr',
+          ),
+        )
         .toList();
     if (tableRows.isEmpty) return const TextSpan();
-    final columnsCount = tableRows.first.children.length;
+    final columnsCount = tableRows.first.nodes.whereType<html.Element>().length;
     final columnWidths = List.generate(
       columnsCount,
       (i) => tableStyle.columnWidths?[i] ?? tableStyle.defaultColumnWidth,
