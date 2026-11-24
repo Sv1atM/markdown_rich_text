@@ -462,7 +462,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
     TapGestureRecognizer? recognizer,
     EdgeInsets padding = EdgeInsets.zero,
   }) sync* {
-    for (final node in nodes) {
+    for (final (i, node) in nodes.indexed) {
       switch (node) {
         case html.Element():
           switch (_styleSheet.buildersExtension[node.localName]) {
@@ -601,8 +601,11 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
             yield TextSpan(text: '\n', style: style);
             yield blockSpacer;
           } else {
-            final text =
-                node.text.startsWith('\n') ? node.text.substring(1) : node.text;
+            final prev = (i > 0) ? nodes[i - 1] : null;
+            final afterBreak = prev is html.Element && prev.localName == 'br';
+            final text = (afterBreak && node.text.startsWith('\n'))
+                ? node.text.substring(1)
+                : node.text;
             yield TextSpan(
               text: widget.softLineBreak
                   ? text
@@ -644,7 +647,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
     final indent = SizedBox(width: listStyle.indent / _scaleFactor);
     for (var i = 0; i < items.length; i++) {
       final element = items[i];
-      final input = element.querySelector('input');
+      final input = element.querySelector('input')?..remove();
       if (i > 0 || level > 0) yield blockSpacer;
       yield WidgetSpan(
         alignment: PlaceholderAlignment.middle,
@@ -682,9 +685,7 @@ class _MarkdownRichTextState extends State<MarkdownRichText> {
             Flexible(
               child: _buildRichTextWidget(
                 children: _buildRichTextTree(
-                  element.nodes
-                      .where((e) => e != input && e.text != '\n')
-                      .toList(),
+                  element.nodes.where((e) => e.text != '\n').toList(),
                   blockSpacer: blockSpacer,
                   level: level + 1,
                   style: textStyle,
